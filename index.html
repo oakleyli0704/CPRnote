@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>急診 CPR 快速紀錄模組 V3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .btn-active:active { transform: scale(0.96); transition: transform 0.1s; }
+        @keyframes flash {
+            0%, 100% { background-color: #fca5a5; color: #991b1b; }
+            50% { background-color: #ef4444; color: white; }
+        }
+        .timer-warning { animation: flash 1s infinite; }
+        input[type="time"]::-webkit-calendar-picker-indicator { display: none; }
+        
+        /* 狀態標籤過濾器的選中樣式 */
+        .filter-active { background-color: #0f766e; color: white; border-color: #0f766e; }
+        .filter-inactive { background-color: #1e293b; color: #94a3b8; border-color: #334155; }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex overflow-hidden font-sans text-slate-800 select-none">
+
+    <!-- 左側：主要操作面板 (保留既有所有功能) -->
+    <div class="w-2/3 p-4 flex flex-col h-full gap-3">
+        
+        <!-- Header：時間與核心控制 (改為急救總時間) -->
+        <div class="bg-white rounded-2xl shadow-sm p-4 flex justify-between items-center border-l-8 border-blue-600">
+            <div class="flex items-center gap-6">
+                <div>
+                    <div class="text-xs text-slate-500 font-bold mb-1">現在時間</div>
+                    <div id="real-clock" class="text-2xl font-mono font-bold text-slate-700">00:00:00</div>
+                </div>
+                <div class="h-10 w-px bg-slate-200"></div>
+                <div>
+                    <div class="text-xs text-slate-500 font-bold mb-1">開始急救時間</div>
+                    <div id="start-clock" class="text-3xl font-mono font-bold text-slate-400">--:--:--</div>
+                </div>
+                <div class="h-10 w-px bg-slate-200"></div>
+                <div>
+                    <!-- 修改：CPR 循環變更為急救總時間 -->
+                    <div class="text-xs text-slate-500 font-bold mb-1">急救總時間</div>
+                    <div id="total-timer" class="text-4xl font-mono font-bold text-blue-600">00:00</div>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button id="btn-start" onclick="toggleCPR()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-lg btn-active shadow-md">
+                    <i class="fa-solid fa-play"></i> 開始急救
+                </button>
+                <button onclick="logROSC()" class="bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold text-lg btn-active shadow-md flex items-center gap-2">
+                    <i class="fa-solid fa-heart-pulse"></i> ROSC
+                </button>
+            </div>
+        </div>
+
+        <div id="action-panel" class="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-3 opacity-50 pointer-events-none transition-opacity pb-4">
+            
+            <!-- 心律與電擊區塊 -->
+            <div class="flex gap-3">
+                <div class="bg-white rounded-xl shadow-sm p-3 flex-1">
+                    <h3 class="font-bold text-slate-500 mb-2 text-sm">心律 (Rhythm)</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="logRhythm('VF')" class="bg-red-50 text-red-700 border border-red-200 py-2 rounded-lg font-bold text-sm btn-active">VF</button>
+                        <button onclick="logRhythm('Pulseless VT')" class="bg-red-50 text-red-700 border border-red-200 py-2 rounded-lg font-bold text-sm btn-active">Pulseless VT</button>
+                        <button onclick="logRhythm('Pulseless Torsades')" class="bg-red-50 text-red-700 border border-red-200 py-2 rounded-lg font-bold text-sm btn-active whitespace-nowrap">Pulseless Torsades</button>
+                        <button onclick="logRhythm('VT')" class="bg-red-50 text-red-700 border border-red-200 py-2 rounded-lg font-bold text-sm btn-active">VT</button>
+                        <button onclick="logRhythm('Torsades')" class="bg-red-50 text-red-700 border border-red-200 py-2 rounded-lg font-bold text-sm btn-active">Torsades</button>
+                        <button onclick="logRhythm('Asystole')" class="bg-slate-100 text-slate-700 border border-slate-300 py-2 rounded-lg font-bold text-sm btn-active">Asystole</button>
+                        <button onclick="logRhythm('PEA')" class="bg-slate-100 text-slate-700 border border-slate-300 py-2 rounded-lg font-bold text-sm btn-active">PEA</button>
+                        <button onclick="logRhythm('PSVT')" class="bg-blue-50 text-blue-700 border border-blue-200 py-2 rounded-lg font-bold text-sm btn-active">PSVT</button>
+                        <button onclick="logRhythm('Bradycardia')" class="bg-blue-50 text-blue-700 border border-blue-200 py-2 rounded-lg font-bold text-sm btn-active">Bradycardia</button>
+                    </div>
+                </div>
+
+                <div id="shock-panel" class="bg-white rounded-xl shadow-sm p-3 w-1/3 opacity-40 pointer-events-none transition-opacity border-2 border-transparent">
+                    <h3 class="font-bold text-slate-500 mb-2 text-sm flex justify-between">
+                        <span>電擊 (Defibrillation)</span>
+                        <span class="text-xs text-red-500 hidden" id="shock-hint">請選擇焦耳</span>
+                    </h3>
+                    <div class="flex flex-col gap-2">
+                        <button onclick="logEvent('電擊', '150 J'); resetShock();" class="bg-red-100 text-red-800 border-2 border-red-300 py-3 rounded-lg font-bold text-lg btn-active">150 J</button>
+                        <button onclick="logEvent('電擊', '200 J'); resetShock();" class="bg-red-100 text-red-800 border-2 border-red-300 py-3 rounded-lg font-bold text-lg btn-active">200 J</button>
+                        <button onclick="logEvent('電擊', '360 J'); resetShock();" class="bg-red-100 text-red-800 border-2 border-red-300 py-3 rounded-lg font-bold text-lg btn-active">360 J</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 藥物區塊 -->
+            <div class="bg-white rounded-xl shadow-sm p-3 flex flex-col h-64">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-slate-500 text-sm">藥物給予</h3>
+                    <div class="flex gap-2">
+                        <button onclick="logEvent('大量點滴', 'N/S')" class="bg-cyan-100 text-cyan-800 px-3 py-1 rounded text-xs font-bold border border-cyan-300 btn-active">N/S</button>
+                        <button onclick="logEvent('大量點滴', 'L/R')" class="bg-cyan-100 text-cyan-800 px-3 py-1 rounded text-xs font-bold border border-cyan-300 btn-active">L/R</button>
+                    </div>
+                </div>
+                <div class="overflow-y-auto no-scrollbar flex-1 border border-slate-100 rounded-lg p-1">
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="giveEpi()" class="bg-red-100 text-red-800 border border-red-300 py-3 px-2 rounded-lg font-bold text-sm btn-active flex justify-between items-center col-span-2">
+                            <span>Adrenalin 1mg</span>
+                            <span id="epi-badge" class="hidden bg-red-600 text-white text-xs px-2 py-1 rounded">03:00</span>
+                        </button>
+                        <button onclick="logEvent('給藥', 'CORDARONE 150mg')" class="bg-purple-100 text-purple-800 border border-purple-300 py-3 px-2 rounded-lg font-bold text-sm btn-active">CORDARONE</button>
+                        <button onclick="logEvent('給藥', 'Atropine 1mg')" class="bg-orange-100 text-orange-800 border border-orange-300 py-3 px-2 rounded-lg font-bold text-sm btn-active">Atropine</button>
+                        <button onclick="logEvent('給藥', 'Rolikan 7% 20mL')" class="bg-blue-100 text-blue-800 border border-blue-300 py-3 px-2 rounded-lg font-bold text-sm btn-active">Rolikan</button>
+                        <button onclick="logEvent('給藥', 'MgSO4 2g/20mL')" class="bg-blue-100 text-blue-800 border border-blue-300 py-3 px-2 rounded-lg font-bold text-sm btn-active">MgSO4</button>
+                        
+                        <button onclick="logEvent('給藥', 'Adenocor 6mg')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">Adenocor</button>
+                        <button onclick="logEvent('給藥', 'Dopamin 200mg')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">Dopamin</button>
+                        <button onclick="logEvent('給藥', 'DORMICUM 5mg')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">DORMICUM</button>
+                        <button onclick="logEvent('給藥', 'DUPIN 10mg')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">DUPIN</button>
+                        <button onclick="logEvent('給藥', 'FURSEMIDE 20mg')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">FURSEMIDE</button>
+                        <button onclick="logEvent('給藥', 'NORepinephrine 4mg')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">NORepi</button>
+                        <button onclick="logEvent('給藥', 'Solu CORtef 100mg')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">Solu CORtef</button>
+                        <button onclick="logEvent('給藥', 'U-Sodin 5mg')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">U-Sodin</button>
+                        <button onclick="logEvent('給藥', 'VitaCAL 20mL')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">VitaCAL</button>
+                        <button onclick="logEvent('給藥', 'D20W 20mL')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">D20W</button>
+                        <button onclick="logEvent('給藥', 'D50W 20mL')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">D50W</button>
+                        <button onclick="logEvent('給藥', 'Xylocaine 2% 100mg')" class="bg-slate-50 border border-slate-200 py-3 px-2 rounded-lg font-bold text-slate-700 text-sm btn-active">Xylocaine</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 管路建立 (動態頁籤) -->
+            <div class="bg-white rounded-xl shadow-sm p-3">
+                <h3 class="font-bold text-slate-500 mb-2 text-sm">管路處置 (Lines/Tubes)</h3>
+                <div class="flex overflow-x-auto gap-2 pb-2 no-scrollbar border-b border-slate-100">
+                    <button onclick="switchTubeTab('endo')" id="tab-endo" class="tube-tab px-4 py-2 rounded-lg bg-teal-100 text-teal-800 font-bold text-sm whitespace-nowrap">Endo(氣管)</button>
+                    <button onclick="switchTubeTab('ng')" id="tab-ng" class="tube-tab px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-bold text-sm whitespace-nowrap">NG(鼻胃管)</button>
+                    <button onclick="switchTubeTab('foley')" id="tab-foley" class="tube-tab px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-bold text-sm whitespace-nowrap">Foley</button>
+                    <button onclick="switchTubeTab('chest')" id="tab-chest" class="tube-tab px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-bold text-sm whitespace-nowrap">Chest Tube</button>
+                    <button onclick="switchTubeTab('ic')" id="tab-ic" class="tube-tab px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-bold text-sm whitespace-nowrap">IC</button>
+                    <button onclick="switchTubeTab('io')" id="tab-io" class="tube-tab px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-bold text-sm whitespace-nowrap">骨內針</button>
+                    <button onclick="switchTubeTab('cvc')" id="tab-cvc" class="tube-tab px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-bold text-sm whitespace-nowrap">CVC</button>
+                    <button onclick="switchTubeTab('tracheo')" id="tab-tracheo" class="tube-tab px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-bold text-sm whitespace-nowrap">氣切</button>
+                </div>
+                <div class="pt-3 min-h-[80px]">
+                    <div id="panel-endo" class="tube-panel flex gap-2 items-end">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">內徑 (mm)</label>
+                            <input type="number" step="0.5" id="val-endo-size" value="7.5" class="w-full p-2 border border-slate-300 rounded-lg text-sm text-center font-bold bg-slate-50">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">深度 (cm)</label>
+                            <input type="number" id="val-endo-depth" value="22" class="w-full p-2 border border-slate-300 rounded-lg text-sm text-center font-bold bg-slate-50">
+                        </div>
+                        <button onclick="logTube('Endo', `Size: ${document.getElementById('val-endo-size').value}mm, Depth: ${document.getElementById('val-endo-depth').value}cm`)" class="bg-teal-500 text-white h-[38px] px-4 rounded-lg font-bold text-sm btn-active">紀錄</button>
+                    </div>
+                    <div id="panel-ng" class="tube-panel hidden flex gap-2 items-end">
+                        <select id="val-ng-site" class="p-2 border border-slate-300 rounded-lg text-sm bg-slate-50"><option>左鼻</option><option>右鼻</option><option>口</option></select>
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Fr</label>
+                            <input type="number" id="val-ng-fr" value="14" class="w-full p-2 border border-slate-300 rounded-lg text-sm text-center bg-slate-50">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Fix (cm)</label>
+                            <input type="number" id="val-ng-fix" value="55" class="w-full p-2 border border-slate-300 rounded-lg text-sm text-center bg-slate-50">
+                        </div>
+                        <button onclick="logTube('NG', `部位: ${document.getElementById('val-ng-site').value}, ${document.getElementById('val-ng-fr').value}Fr, Fix: ${document.getElementById('val-ng-fix').value}cm`)" class="bg-slate-600 text-white h-[38px] px-4 rounded-lg font-bold text-sm btn-active">紀錄</button>
+                    </div>
+                    <div id="panel-foley" class="tube-panel hidden flex gap-2 items-end">
+                        <select id="val-foley-type" class="p-2 border border-slate-300 rounded-lg text-sm bg-slate-50 flex-1"><option>2-Way</option><option>3-Way</option></select>
+                        <select id="val-foley-mat" class="p-2 border border-slate-300 rounded-lg text-sm bg-slate-50 flex-1"><option>一般</option><option>矽質(Silicone)</option></select>
+                        <div class="w-20">
+                            <label class="block text-xs text-slate-500 mb-1">Fr</label>
+                            <input type="number" id="val-foley-fr" value="14" class="w-full p-2 border border-slate-300 rounded-lg text-sm text-center bg-slate-50">
+                        </div>
+                        <button onclick="logTube('Foley', `${document.getElementById('val-foley-type').value} ${document.getElementById('val-foley-mat').value}, ${document.getElementById('val-foley-fr').value}Fr`)" class="bg-slate-600 text-white h-[38px] px-4 rounded-lg font-bold text-sm btn-active">紀錄</button>
+                    </div>
+                    <div id="panel-chest" class="tube-panel hidden flex gap-2 items-end">
+                        <select id="val-chest-site" class="p-2 border border-slate-300 rounded-lg text-sm bg-slate-50"><option>左側</option><option>右側</option></select>
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Fr (Pig-tail)</label>
+                            <input type="text" id="val-chest-fr" placeholder="例如: 32" class="w-full p-2 border border-slate-300 rounded-lg text-sm text-center bg-slate-50">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Fix (cm/格)</label>
+                            <input type="text" id="val-chest-fix" placeholder="例如: 10cm" class="w-full p-2 border border-slate-300 rounded-lg text-sm text-center bg-slate-50">
+                        </div>
+                        <button onclick="logTube('Chest Tube', `部位: ${document.getElementById('val-chest-site').value}, ${document.getElementById('val-chest-fr').value}Fr, Fix: ${document.getElementById('val-chest-fix').value}`)" class="bg-slate-600 text-white h-[38px] px-4 rounded-lg font-bold text-sm btn-active">紀錄</button>
+                    </div>
+                    <div id="panel-ic" class="tube-panel hidden flex gap-2 items-end">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">部位</label>
+                            <input type="text" id="val-ic-site" placeholder="例如: 左手背" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-slate-50">
+                        </div>
+                        <div class="w-24">
+                            <label class="block text-xs text-slate-500 mb-1">號數 (G)</label>
+                            <select id="val-ic-g" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-slate-50"><option>18G</option><option>20G</option><option>22G</option><option>24G</option></select>
+                        </div>
+                        <button onclick="logTube('IC', `部位: ${document.getElementById('val-ic-site').value}, ${document.getElementById('val-ic-g').value}`)" class="bg-slate-600 text-white h-[38px] px-4 rounded-lg font-bold text-sm btn-active">紀錄</button>
+                    </div>
+                    <div id="panel-io" class="tube-panel hidden flex gap-2 items-end">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">施打部位</label>
+                            <input type="text" id="val-io-site" placeholder="例如: 右側脛骨近端" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-slate-50">
+                        </div>
+                        <button onclick="logTube('骨內針(IO)', `部位: ${document.getElementById('val-io-site').value}`)" class="bg-slate-600 text-white h-[38px] px-4 rounded-lg font-bold text-sm btn-active">紀錄</button>
+                    </div>
+                    <div id="panel-cvc" class="tube-panel hidden flex gap-2 items-end">
+                        <input type="text" id="val-cvc-site" placeholder="輸入 CVC 部位 (如: 右頸靜脈)" class="flex-1 p-2 border border-slate-300 rounded-lg text-sm bg-slate-50">
+                        <button onclick="logTube('CVC', `部位: ${document.getElementById('val-cvc-site').value}`)" class="bg-slate-600 text-white h-[38px] px-4 rounded-lg font-bold text-sm btn-active">紀錄</button>
+                    </div>
+                    <div id="panel-tracheo" class="tube-panel hidden flex gap-2 items-end">
+                        <input type="text" id="val-tracheo-size" placeholder="輸入氣切內管規格/尺寸" class="flex-1 p-2 border border-slate-300 rounded-lg text-sm bg-slate-50">
+                        <button onclick="logTube('氣切', `規格: ${document.getElementById('val-tracheo-size').value}`)" class="bg-slate-600 text-white h-[38px] px-4 rounded-lg font-bold text-sm btn-active">紀錄</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右側：時間軸、過濾器、自訂輸入與報表生成 -->
+    <div class="w-1/3 bg-slate-800 text-slate-100 flex flex-col shadow-2xl relative">
+        
+        <!-- 時間軸標題 -->
+        <div class="p-3 border-b border-slate-700 bg-slate-900 flex justify-between items-center">
+            <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-list-ul"></i> 處置時間軸</h2>
+            <span class="text-xs text-slate-400">點擊時間修改, 點垃圾桶刪除</span>
+        </div>
+
+        <!-- 狀態標籤過濾器 -->
+        <div class="flex gap-2 p-3 bg-slate-900 border-b border-slate-700 overflow-x-auto no-scrollbar">
+            <button onclick="setFilter('全部')" id="flt-全部" class="filter-btn filter-active border px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors">全部</button>
+            <button onclick="setFilter('給藥')" id="flt-給藥" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors">給藥/點滴</button>
+            <button onclick="setFilter('心律')" id="flt-心律" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors">心律</button>
+            <button onclick="setFilter('電擊')" id="flt-電擊" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors">電擊</button>
+            <button onclick="setFilter('管路')" id="flt-管路" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors">管路</button>
+            <button onclick="setFilter('備註')" id="flt-備註" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors">備註/系統</button>
+        </div>
+
+        <!-- 自訂內容輸入區 (Line 形式) -->
+        <div class="p-3 bg-slate-900 border-b border-slate-700 flex gap-2 items-center">
+            <input type="text" id="custom-note" onkeypress="if(event.key === 'Enter') submitCustomNote()" class="flex-1 bg-slate-800 text-slate-200 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500 placeholder-slate-500" placeholder="快速輸入自訂備註 (例如: 家屬抵達)">
+            <button onclick="submitCustomNote()" class="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-bold btn-active transition-colors">
+                送出
+            </button>
+        </div>
+        
+        <!-- 紀錄清單 -->
+        <div class="flex-1 overflow-y-auto p-3 no-scrollbar relative">
+            <ul id="timeline-list" class="space-y-2">
+                <li class="text-slate-500 text-sm text-center mt-10">尚未開始急救</li>
+            </ul>
+        </div>
+
+        <!-- 一鍵生成護理紀錄 -->
+        <div class="p-4 bg-slate-900 border-t border-slate-700 flex flex-col gap-3">
+            <button onclick="generateReport()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-lg btn-active flex justify-center items-center gap-2 transition-colors">
+                <i class="fa-solid fa-file-lines"></i> 一鍵生成護理紀錄
+            </button>
+            <textarea id="report-output" class="w-full h-32 bg-slate-800 text-slate-200 border border-slate-600 rounded-lg p-3 text-sm no-scrollbar hidden focus:outline-none focus:border-blue-500" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false;
+        let totalSeconds = 0; // 改為累加總時間
+        let epiSeconds = 0;
+        let timerInterval;
+        let clockInterval;
+        let events = [];
+        let systemStartTime = null;
+        let currentFilter = '全部';
+
+        // 即時時鐘
+        function updateRealClock() {
+            let now = new Date();
+            let timeString = now.toTimeString().split(' ')[0];
+            document.getElementById('real-clock').innerText = timeString;
+        }
+        clockInterval = setInterval(updateRealClock, 1000);
+        updateRealClock();
+
+        function formatTime(sec) {
+            let m = Math.floor(sec / 60).toString().padStart(2, '0');
+            let s = (sec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // 開始 / 暫停急救 (總時間累加邏輯)
+        function toggleCPR() {
+            let btn = document.getElementById('btn-start');
+            let panel = document.getElementById('action-panel');
+            
+            if (!isRunning) {
+                if(!systemStartTime) {
+                    systemStartTime = document.getElementById('real-clock').innerText;
+                    document.getElementById('start-clock').innerText = systemStartTime;
+                    document.getElementById('start-clock').classList.replace('text-slate-400', 'text-slate-700');
+                }
+                isRunning = true;
+                panel.classList.remove('opacity-50', 'pointer-events-none');
+                btn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停紀錄';
+                btn.className = 'bg-yellow-500 text-white px-6 py-3 rounded-xl font-bold text-lg btn-active shadow-md flex items-center gap-2';
+                logEvent('系統', '啟動急救紀錄');
+                
+                timerInterval = setInterval(() => {
+                    totalSeconds++; // 總時間累加
+                    document.getElementById('total-timer').innerText = formatTime(totalSeconds);
+                    
+                    if (epiSeconds > 0) {
+                        epiSeconds--;
+                        let badge = document.getElementById('epi-badge');
+                        badge.innerText = formatTime(epiSeconds);
+                        if (epiSeconds <= 30) badge.classList.add('timer-warning');
+                    } else if (epiSeconds === 0) {
+                        document.getElementById('epi-badge').classList.add('hidden');
+                        document.getElementById('epi-badge').classList.remove('timer-warning');
+                    }
+                }, 1000);
+            } else {
+                isRunning = false;
+                panel.classList.add('opacity-50', 'pointer-events-none');
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> 繼續紀錄';
+                btn.className = 'bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-lg btn-active shadow-md flex items-center gap-2';
+                clearInterval(timerInterval);
+            }
+        }
+
+        function logROSC() {
+            if(!isRunning && !systemStartTime) return;
+            logEvent('系統', '★★ 達成 ROSC ★★');
+            clearInterval(timerInterval);
+            isRunning = false;
+            document.getElementById('action-panel').classList.add('opacity-50', 'pointer-events-none');
+            document.getElementById('btn-start').innerHTML = '<i class="fa-solid fa-play"></i> 重新開始';
+            document.getElementById('btn-start').className = 'bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-lg btn-active shadow-md flex items-center gap-2';
+            alert("已記錄 ROSC，總計時已暫停。請接續記錄生命徵象。");
+        }
+
+        const shockableRhythms = ['VF', 'Pulseless VT', 'Pulseless Torsades', 'VT', 'Torsades'];
+        let isFirstRhythm = true;
+        
+        function logRhythm(rhythm) {
+            let label = isFirstRhythm ? '第一次心律' : '心律';
+            logEvent(label, rhythm);
+            isFirstRhythm = false;
+
+            let shockPanel = document.getElementById('shock-panel');
+            let shockHint = document.getElementById('shock-hint');
+            if (shockableRhythms.includes(rhythm)) {
+                shockPanel.classList.remove('opacity-40', 'pointer-events-none');
+                shockPanel.classList.add('border-red-400');
+                shockHint.classList.remove('hidden');
+            } else {
+                resetShock();
+            }
+        }
+
+        function resetShock() {
+            let shockPanel = document.getElementById('shock-panel');
+            shockPanel.classList.add('opacity-40', 'pointer-events-none');
+            shockPanel.classList.remove('border-red-400');
+            document.getElementById('shock-hint').classList.add('hidden');
+        }
+
+        function giveEpi() {
+            logEvent('給藥', 'Adrenalin 1mg');
+            epiSeconds = 180;
+            let badge = document.getElementById('epi-badge');
+            badge.classList.remove('hidden', 'timer-warning');
+            badge.innerText = "03:00";
+        }
+
+        function switchTubeTab(target) {
+            document.querySelectorAll('.tube-tab').forEach(el => {
+                el.classList.remove('bg-teal-100', 'text-teal-800');
+                el.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            document.getElementById('tab-'+target).classList.remove('bg-slate-100', 'text-slate-600');
+            document.getElementById('tab-'+target).classList.add('bg-teal-100', 'text-teal-800');
+            
+            document.querySelectorAll('.tube-panel').forEach(el => el.classList.add('hidden'));
+            document.getElementById('panel-'+target).classList.remove('hidden');
+        }
+
+        function logTube(type, detail) {
+            logEvent('管路', `[${type}] ${detail}`);
+        }
+
+        // 送出自訂備註
+        function submitCustomNote() {
+            let input = document.getElementById('custom-note');
+            let text = input.value.trim();
+            if (text !== "") {
+                logEvent('備註', text);
+                input.value = ""; // 清空輸入框
+            }
+        }
+
+        // 設定過濾器
+        function setFilter(filterName) {
+            currentFilter = filterName;
+            
+            // 更新 UI 樣式
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('filter-active');
+                btn.classList.add('filter-inactive');
+            });
+            document.getElementById('flt-' + filterName).classList.remove('filter-inactive');
+            document.getElementById('flt-' + filterName).classList.add('filter-active');
+            
+            renderTimeline();
+        }
+
+        // 核心紀錄
+        function logEvent(action, detail) {
+            let event = {
+                id: Date.now(),
+                time: document.getElementById('real-clock').innerText.substring(0,5), 
+                action: action,
+                detail: detail
+            };
+            events.push(event);
+            
+            // 如果當前過濾器不是「全部」，且新事件不屬於當前過濾器，自動切回「全部」以便看到最新事件
+            if (currentFilter !== '全部') {
+                setFilter('全部'); 
+            } else {
+                renderTimeline();
+            }
+        }
+
+        // 根據 Action 取得標籤顏色 (顏色區分需求)
+        function getActionColor(action, detail) {
+            if (detail.includes('ROSC')) return 'bg-emerald-600 text-white';
+            if (action.includes('心律')) return 'bg-red-600 text-white';
+            if (action === '電擊') return 'bg-orange-600 text-white';
+            if (action === '給藥') return 'bg-purple-600 text-white';
+            if (action === '大量點滴') return 'bg-cyan-600 text-white';
+            if (action === '管路') return 'bg-teal-600 text-white';
+            if (action === '備註') return 'bg-gray-500 text-white';
+            return 'bg-slate-700 text-white'; // 系統或預設
+        }
+
+        // 渲染 Timeline (支援過濾)
+        function renderTimeline() {
+            let list = document.getElementById('timeline-list');
+            list.innerHTML = '';
+            
+            // 越新的在越上面
+            let reversedEvents = [...events].reverse();
+            
+            // 過濾邏輯
+            let filteredEvents = reversedEvents.filter(e => {
+                if (currentFilter === '全部') return true;
+                if (currentFilter === '給藥' && (e.action === '給藥' || e.action === '大量點滴')) return true;
+                if (currentFilter === '心律' && e.action.includes('心律')) return true;
+                if (currentFilter === '電擊' && e.action === '電擊') return true;
+                if (currentFilter === '管路' && e.action === '管路') return true;
+                if (currentFilter === '備註' && (e.action === '備註' || e.action === '系統')) return true;
+                return false;
+            });
+
+            if (filteredEvents.length === 0) {
+                list.innerHTML = `<li class="text-slate-500 text-sm text-center mt-10">此分類尚未有紀錄</li>`;
+                return;
+            }
+            
+            filteredEvents.forEach(e => {
+                let li = document.createElement('li');
+                li.className = 'bg-slate-800 border border-slate-700 p-2.5 rounded-lg flex flex-col gap-1 hover:border-slate-500 transition-colors shadow-sm';
+                
+                let colorClass = getActionColor(e.action, e.detail);
+
+                li.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <input type="time" value="${e.time}" onchange="updateTime(${e.id}, this.value)" class="bg-slate-900 border border-slate-600 rounded text-teal-400 font-mono font-bold text-sm px-1 py-0.5 focus:outline-none focus:border-teal-500">
+                        <div id="del-container-${e.id}">
+                            <button onclick="reqDelete(${e.id})" class="text-slate-500 hover:text-red-400 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="text-slate-200 mt-1 flex items-start text-sm">
+                        <span class="${colorClass} px-2 py-0.5 rounded text-xs font-bold mr-2 whitespace-nowrap mt-0.5">${e.action}</span>
+                        <span class="leading-snug break-all">${e.detail}</span>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function updateTime(id, newTime) {
+            let event = events.find(e => e.id === id);
+            if(event) {
+                event.time = newTime;
+                // 若要保持時間順序，這裡可以加入重新排序的邏輯，目前維持插入順序
+            }
+        }
+
+        function reqDelete(id) {
+            let container = document.getElementById(`del-container-${id}`);
+            container.innerHTML = `<button onclick="confirmDelete(${id})" class="bg-red-500 text-white text-xs px-2 py-1 rounded shadow">確定刪除?</button>`;
+            setTimeout(() => {
+                if(document.getElementById(`del-container-${id}`)) {
+                    document.getElementById(`del-container-${id}`).innerHTML = `<button onclick="reqDelete(${id})" class="text-slate-500 hover:text-red-400 px-2 py-1"><i class="fa-solid fa-trash"></i></button>`;
+                }
+            }, 3000);
+        }
+
+        function confirmDelete(id) {
+            events = events.filter(e => e.id !== id);
+            renderTimeline();
+        }
+
+        // 一鍵生成護理紀錄 (整合並依照時間順序排序)
+        function generateReport() {
+            if (events.length === 0) {
+                alert("目前沒有任何紀錄可生成！");
+                return;
+            }
+            
+            let output = document.getElementById('report-output');
+            output.classList.remove('hidden');
+            
+            // 複製一份陣列，並依照時間重新由舊到新排序 (確保修改時間後報表邏輯正確)
+            let sortedEvents = [...events].sort((a, b) => a.time.localeCompare(b.time));
+            
+            let text = `【急診急救護理紀錄】\n`;
+            text += `啟動時間: ${systemStartTime || '未記錄'}\n`;
+            text += `急救總歷時: ${document.getElementById('total-timer').innerText}\n`;
+            text += `------------------------\n`;
+            
+            sortedEvents.forEach(e => {
+                text += `[${e.time}] ${e.action}: ${e.detail}\n`;
+            });
+            
+            text += `------------------------\n`;
+            text += `紀錄護理師: 李阿饅\n`;
+            text += `(此紀錄由 Care Map 系統自動生成)`;
+            
+            output.value = text;
+            output.scrollTop = output.scrollHeight; // 自動捲動到底部
+        }
+    </script>
+</body>
+</html>
