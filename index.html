@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CPR 快速紀錄-V13</title>
+    <title>CPR 快速紀錄-V14 </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -166,6 +166,7 @@
                 <div class="flex gap-2 items-end">
                     <div class="w-24">
                         <label class="block text-[10px] text-slate-500 mb-1">單位 (U)</label>
+                        <!-- 全面啟動純數字鍵盤 inputmode="decimal" -->
                         <input type="number" inputmode="decimal" id="val-blood-u" value="2" class="w-full p-3 border border-slate-300 rounded-lg text-base text-center bg-slate-50 font-bold">
                     </div>
                     <button id="btn-submit-blood" onclick="submitBlood()" class="flex-1 bg-red-500 text-white h-[46px] rounded-lg font-bold text-sm md:text-base btn-active shadow-sm transition-colors">紀錄血品</button>
@@ -506,6 +507,7 @@
 
         let cprAlarmInterval = null;
         let epiAlarmInterval = null;
+        let wakeLock = null; // 螢幕防休眠 API 變數
 
         // --- 全域點擊喚醒 iOS 音效機制 ---
         document.addEventListener('click', function() {
@@ -523,8 +525,34 @@
             if (audioEnabled && audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         }, { capture: true, once: false });
 
+        // --- 螢幕防休眠 (Screen Wake Lock API) ---
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Screen Wake Lock released');
+                    });
+                }
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        }
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release();
+                wakeLock = null;
+            }
+        }
+        // 若切換視窗回來，如果計時器還在跑，重新索取防休眠
+        document.addEventListener('visibilitychange', async () => {
+            if (isRunning && wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
 
-        // --- 藥物智能字典 (去蕪存菁版) ---
+
+        // --- 藥物智能字典 ---
         const medDict = {
             'Adrenalin': { generic: 'Epinephrine', val: 1, unit: 'mg', ml: 1, quick: [] },
             'Adenocor': { generic: 'Adenosine', val: 6, unit: 'mg', ml: 2, quick: [1, 2] },
@@ -569,7 +597,7 @@
             return Number.isInteger(val) ? val : parseFloat(val.toFixed(1));
         }
 
-        // --- 無限循環警報音 (精準排程與安全音量) ---
+        // --- 無限循環警報音 ---
         function startCprAlarm() {
             if(cprAlarmInterval) return;
             if(audioEnabled) playCycleBeep();
@@ -590,7 +618,12 @@
             epiAlarmInterval = null;
         }
 
-        // --- 核心計時 ---
+        // --- 核心計時 (含絕對時間校準架構) ---
+        let totalStartTimeMs = 0;
+        let pausedTotalElapsedMs = 0;
+        let cprTargetTimeMs = 0;
+        let epiTargetTimeMs = 0;
+
         function toggleCPR() {
             let btnStart = document.getElementById('btn-start');
             let panel = document.getElementById('view-actions');
@@ -607,52 +640,85 @@
                 
                 isRunning = true;
                 isTotalTimerRunning = true;
+                requestWakeLock(); // 啟動螢幕防休眠
+
                 panel.classList.remove('opacity-50', 'pointer-events-none');
                 btnRosc.classList.remove('opacity-50', 'pointer-events-none');
                 
                 btnStart.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停計時';
                 btnStart.className = 'flex-1 bg-yellow-500 text-white py-2 rounded-lg font-bold text-sm btn-active shadow-sm flex justify-center items-center gap-1';
                 
-                logEvent('系統', '啟動急救計時');
+                logEvent('系統', '啟動/繼續急救計時');
                 
+                let now = Date.now();
+                totalStartTimeMs = now - pausedTotalElapsedMs;
+
+                // 重新計算目標絕對時間
+                if (cprSeconds > 0) cprTargetTimeMs = now + (cprSeconds * 1000);
+                if (epiSeconds > 0) epiTargetTimeMs = now + (epiSeconds * 1000);
+
                 if(cprSeconds === -1) startCprAlarm();
                 if(epiSeconds === -1) startEpiAlarm();
                 
+                // 改用高頻短距偵測，確保在低電量模式也不漏秒
                 timerInterval = setInterval(() => {
+                    let currentNow = Date.now();
+                    
                     if(isTotalTimerRunning) {
-                        totalSeconds++;
+                        totalSeconds = Math.floor((currentNow - totalStartTimeMs) / 1000);
                         document.getElementById('total-timer').innerText = formatTimeFull(totalSeconds);
                     }
-                    if(cprSeconds > 0) {
-                        cprSeconds--;
-                        document.getElementById('cpr-timer').innerText = formatTimeMinSec(cprSeconds);
-                    } else if (cprSeconds === 0) {
-                        showToast("⚠️ 2分鐘循環時間到", true, 3000);
-                        startCprAlarm();
-                        cprSeconds = -1; 
+                    
+                    // CPR 校準
+                    if (cprSeconds !== -1 && cprTargetTimeMs > 0) {
+                        let remain = Math.ceil((cprTargetTimeMs - currentNow) / 1000);
+                        if (remain <= 0) {
+                            showToast("⚠️ 2分鐘循環時間到", true, 3000);
+                            startCprAlarm();
+                            cprSeconds = -1;
+                            cprTargetTimeMs = 0;
+                            document.getElementById('cpr-timer').innerText = "00:00";
+                        } else {
+                            cprSeconds = remain; // 同步狀態
+                            document.getElementById('cpr-timer').innerText = formatTimeMinSec(remain);
+                        }
                     }
-                    if (epiSeconds > 0) {
-                        epiSeconds--;
-                        let badge = document.getElementById('epi-timer-badge');
-                        badge.innerText = formatTimeMinSec(epiSeconds);
-                        if (epiSeconds <= 30) badge.classList.add('timer-warning');
+                    
+                    // Epi 校準
+                    if (epiSeconds !== -1 && epiSeconds !== -2 && epiTargetTimeMs > 0) {
+                        let remain = Math.ceil((epiTargetTimeMs - currentNow) / 1000);
+                        if (remain <= 30 && remain > 0) {
+                            document.getElementById('epi-timer-badge').classList.add('timer-warning');
+                        }
                         
-                        if (epiSeconds === 0) {
+                        if (remain <= 0) {
                             showToast("⚠️ Adrenalin 3分鐘已到！", true, 3000);
                             startEpiAlarm();
+                            let badge = document.getElementById('epi-timer-badge');
                             badge.classList.remove('timer-warning');
                             badge.classList.add('bg-red-800');
                             badge.innerText = "超時!";
                             epiSeconds = -1;
+                            epiTargetTimeMs = 0;
+                        } else {
+                            epiSeconds = remain;
+                            document.getElementById('epi-timer-badge').innerText = formatTimeMinSec(remain);
                         }
                     }
-                }, 1000);
+                }, 200); // 200ms 更新頻率，完美校準
             } else {
+                // 暫停邏輯
                 isRunning = false;
                 isTotalTimerRunning = false;
+                releaseWakeLock(); // 解除防休眠
+
+                let now = Date.now();
+                pausedTotalElapsedMs = now - totalStartTimeMs;
+
                 panel.classList.add('opacity-50', 'pointer-events-none');
                 btnStart.innerHTML = '<i class="fa-solid fa-play"></i> 繼續計時';
                 btnStart.className = 'flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm btn-active shadow-sm flex justify-center items-center gap-1';
+                
                 clearInterval(timerInterval);
                 stopCprAlarm();
                 stopEpiAlarm();
@@ -662,20 +728,26 @@
         function logROSC() {
             logEvent('系統', '★★ 達成 ROSC ★★');
             cprSeconds = -1;
+            cprTargetTimeMs = 0;
             document.getElementById('cpr-timer').innerText = "--:--";
             isTotalTimerRunning = false;
             
             stopCprAlarm();
             stopEpiAlarm();
+            releaseWakeLock(); // ROSC 時解除防休眠
 
             if(epiSeconds > 0 || epiSeconds === -1) {
                 epiSeconds = -2; 
+                epiTargetTimeMs = 0;
                 let badge = document.getElementById('epi-timer-badge');
                 badge.innerText = "暫停";
                 badge.classList.remove('timer-warning', 'bg-red-800');
                 badge.classList.replace('bg-red-600', 'bg-slate-500');
             }
             showToast("已紀錄 ROSC，停止所有計時");
+            
+            // 將畫面上鎖，但維持計時暫停按鈕
+            toggleCPR(); 
         }
 
         function logCode999() {
@@ -711,7 +783,7 @@
                 let gain = audioCtx.createGain();
                 osc.type = 'square'; 
                 osc.frequency.value = 1000; 
-                gain.gain.value = 0.2; // 安全音量，防 iOS 破音保護
+                gain.gain.value = 0.2; 
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start(now + (i * 0.3));
@@ -872,6 +944,7 @@
                 
                 stopEpiAlarm(); // 停止持續警報並重設
                 epiSeconds = 180; 
+                epiTargetTimeMs = Date.now() + 180000; // 重置絕對時間
                 
                 let countBadge = document.getElementById('epi-badge-count');
                 let timerBadge = document.getElementById('epi-timer-badge');
@@ -1032,6 +1105,7 @@
             
             stopCprAlarm(); // 完成評估即停止循環警報
             cprSeconds = 120;
+            cprTargetTimeMs = Date.now() + 120000; // 重置絕對時間
             cycleCount++;
             document.getElementById('cpr-timer').innerText = "02:00";
             
