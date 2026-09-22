@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>急診 CPR 快速紀錄_V7_1150922</title>
+    <title>CPR 快速紀錄-V10</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -24,10 +24,8 @@
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col font-sans text-slate-800 select-none pb-[80px]">
 
-    <!-- ==================== 頂部全局鎖定區塊 (Sticky) ==================== -->
+    <!-- ==================== 頂部全局鎖定區塊 ==================== -->
     <div id="header-bar" class="sticky top-0 bg-white shadow-md z-40 px-3 py-2 flex flex-col gap-2 transition-colors duration-300">
-        
-        <!-- 全局控制列 -->
         <div class="flex justify-between items-center gap-2">
             <button id="btn-start" onclick="toggleCPR()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm btn-active shadow-sm flex justify-center items-center gap-1">
                 <i class="fa-solid fa-play"></i> 開始計時
@@ -43,7 +41,6 @@
             </button>
         </div>
 
-        <!-- 計時器列 -->
         <div class="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
             <div class="text-center w-1/3">
                 <div class="text-[10px] text-slate-500 font-bold">現在時間</div>
@@ -63,9 +60,11 @@
     </div>
 
     <!-- 迷你提示框 -->
-    <div id="toast" class="fixed top-32 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg z-50 hidden opacity-0 transition-opacity flex items-center gap-2">
-        <i class="fa-solid fa-circle-check text-emerald-400"></i>
-        <span id="toast-msg">已紀錄</span>
+    <div id="toast" class="fixed top-32 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg z-50 hidden opacity-0 transition-opacity flex flex-col items-center text-center max-w-[90%]">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-circle-check text-emerald-400" id="toast-icon"></i>
+            <span id="toast-msg">已紀錄</span>
+        </div>
     </div>
 
     <!-- ==================== 主內容區 ==================== -->
@@ -78,26 +77,23 @@
                 <i class="fa-solid fa-clipboard-list"></i> 📝 2分鐘 CPR 循環評估
             </button>
 
-            <!-- 心律面板 (三層架構) -->
+            <!-- 心律面板 -->
             <div class="bg-white rounded-xl shadow-sm p-3 border border-slate-100">
                 <h3 class="font-bold text-slate-500 mb-2 text-xs">心律 (Rhythm)</h3>
                 <div class="flex flex-col gap-2">
-                    <!-- 灰色層 -->
                     <div class="flex gap-2">
-                        <button onclick="logRhythm('Asystole')" class="flex-1 bg-slate-100 text-slate-700 border border-slate-300 py-2 rounded-lg font-bold text-xs md:text-sm btn-active">Asystole</button>
-                        <button onclick="logRhythm('PEA')" class="flex-1 bg-slate-100 text-slate-700 border border-slate-300 py-2 rounded-lg font-bold text-xs md:text-sm btn-active">PEA</button>
+                        <button onclick="logRhythm('Asystole')" class="flex-1 bg-slate-100 text-slate-700 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active">Asystole</button>
+                        <button onclick="logRhythm('PEA')" class="flex-1 bg-slate-100 text-slate-700 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active">PEA</button>
                     </div>
-                    <!-- 紅色層 -->
                     <div class="flex gap-2">
-                        <button onclick="logRhythm('VF')" class="flex-1 bg-red-50 text-red-700 border border-red-200 py-2 rounded-lg font-bold text-xs md:text-sm btn-active">VF</button>
-                        <button onclick="logRhythm('VT')" class="flex-1 bg-red-50 text-red-700 border border-red-200 py-2 rounded-lg font-bold text-xs md:text-sm btn-active">VT</button>
-                        <button onclick="logRhythm('PULSE VT')" class="flex-1 bg-red-50 text-red-700 border border-red-200 py-2 rounded-lg font-bold text-xs md:text-sm btn-active">PULSE VT</button>
+                        <button onclick="logRhythm('VF')" class="flex-1 bg-red-50 text-red-700 border border-red-200 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active">VF</button>
+                        <button onclick="logRhythm('VT')" class="flex-1 bg-red-50 text-red-700 border border-red-200 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active">VT</button>
+                        <button onclick="logRhythm('PULSE VT')" class="flex-1 bg-red-50 text-red-700 border border-red-200 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active">PULSE VT</button>
                     </div>
-                    <!-- 藍色層 -->
                     <div class="flex gap-2">
-                        <button onclick="logRhythm('PSVT')" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-2 rounded-lg font-bold text-xs md:text-sm btn-active">PSVT</button>
-                        <button onclick="logRhythm('Bradycardia')" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-2 rounded-lg font-bold text-xs md:text-sm btn-active">Bradycardia</button>
-                        <button onclick="logRhythm('ST')" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-2 rounded-lg font-bold text-xs md:text-sm btn-active">ST</button>
+                        <button onclick="logRhythm('PSVT')" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active">PSVT</button>
+                        <button onclick="logRhythm('Bradycardia')" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active truncate px-1">Bradycardia</button>
+                        <button onclick="logRhythm('ST')" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active">ST</button>
                     </div>
                 </div>
                 
@@ -107,19 +103,18 @@
                         <button onclick="resetShock()" class="text-slate-400 text-[10px] bg-slate-100 px-2 py-1 rounded">取消</button>
                     </h3>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="logEvent('電擊', '150 J'); resetShock();" class="bg-red-500 text-white py-2 rounded-lg font-bold text-sm md:text-base btn-active shadow-sm">150 J</button>
-                        <button onclick="logEvent('電擊', '200 J'); resetShock();" class="bg-red-500 text-white py-2 rounded-lg font-bold text-sm md:text-base btn-active shadow-sm">200 J</button>
-                        <button onclick="logEvent('電擊', '360 J'); resetShock();" class="bg-red-500 text-white py-2 rounded-lg font-bold text-sm md:text-base btn-active shadow-sm">360 J</button>
+                        <button onclick="logEvent('電擊', '150 J'); resetShock();" class="bg-red-500 text-white py-3 rounded-lg font-bold text-base md:text-lg btn-active shadow-sm">150 J</button>
+                        <button onclick="logEvent('電擊', '200 J'); resetShock();" class="bg-red-500 text-white py-3 rounded-lg font-bold text-base md:text-lg btn-active shadow-sm">200 J</button>
+                        <button onclick="logEvent('電擊', '360 J'); resetShock();" class="bg-red-500 text-white py-3 rounded-lg font-bold text-base md:text-lg btn-active shadow-sm">360 J</button>
                     </div>
                 </div>
             </div>
 
             <!-- 急救藥物 -->
             <div class="bg-white rounded-xl shadow-sm p-3 border border-slate-100">
-                <h3 class="font-bold text-slate-500 mb-2 text-xs">急救藥物 (點擊選擇數量與泡製)</h3>
+                <h3 class="font-bold text-slate-500 mb-2 text-xs">急救藥物 (點擊顯示學名與換算)</h3>
                 
-                <!-- Adrenalin -->
-                <button onclick="giveEpi()" class="w-full bg-red-100 text-red-800 border-2 border-red-300 py-4 px-4 rounded-xl font-bold text-lg md:text-xl btn-active flex justify-between items-center mb-3 relative shadow-sm">
+                <button onclick="openMedModal('Adrenalin 1mg')" class="w-full bg-red-100 text-red-800 border-2 border-red-300 py-4 px-4 rounded-xl font-bold text-lg md:text-xl btn-active flex justify-between items-center mb-3 relative shadow-sm">
                     <div class="flex items-center gap-2">
                         <span>Adrenalin 1mg</span>
                         <span id="epi-badge-count" class="hidden bg-red-600 text-white text-[12px] w-6 h-6 flex items-center justify-center rounded-full absolute -top-2 -right-2 shadow-sm border-2 border-white">0</span>
@@ -127,17 +122,18 @@
                     <span id="epi-timer-badge" class="hidden bg-red-600 text-white text-sm px-2 py-1 rounded-md">03:00</span>
                 </button>
 
-                <!-- 其他急救藥物 -->
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="openMedModal('CORDARONE 150mg')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">CORDARONE</button>
+                    <button onclick="openMedModal('Adenocor')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Adenocor</button>
                     <button onclick="openMedModal('Atropine 1mg')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Atropine</button>
-                    <button onclick="openMedModal('Rolikan 7% 20mL')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Rolikan</button>
-                    <button onclick="openMedModal('MgSO4 2g')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">MgSO4</button>
-                    <button onclick="openMedModal('Norepinephrine')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Norepinephrine</button>
+                    <button onclick="openMedModal('CORDARONE 150mg')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm truncate">CORDARONE</button>
                     <button onclick="openMedModal('Dopamin 200mg')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Dopamin</button>
                     <button onclick="openMedModal('DORMICUM 5mg')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">DORMICUM</button>
-                    <button onclick="openMedModal('Adenocor')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Adenocor</button>
-                    <button onclick="openMedModal('FURSEMIDE 20mg')" class="col-span-2 bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">FURSEMIDE</button>
+                    <button onclick="openMedModal('FURSEMIDE 20mg')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">FURSEMIDE</button>
+                    <button onclick="openMedModal('MgSO4 2g')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">MgSO4</button>
+                    <button onclick="openMedModal('Norepinephrine')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm truncate">Norepinephrine</button>
+                    <button onclick="openMedModal('Rolikan 7% 20mL')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Rolikan</button>
+                    <button onclick="openMedModal('Vitacal')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Vitacal</button>
+                    <button onclick="openMedModal('Vitagen 50%')" class="col-span-2 bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Vitagen 50%</button>
                 </div>
             </div>
 
@@ -145,33 +141,67 @@
             <div class="bg-white rounded-xl shadow-sm p-3 border border-slate-100">
                 <h3 class="font-bold text-slate-500 mb-2 text-xs">大量點滴 (IV Fluids)</h3>
                 <div class="flex gap-2">
-                    <button onclick="openMedModal('大量點滴 N/S')" class="flex-1 bg-cyan-50 text-cyan-700 border-2 border-cyan-200 py-3 rounded-lg font-bold text-base btn-active text-center">N/S</button>
-                    <button onclick="openMedModal('大量點滴 L/R')" class="flex-1 bg-cyan-50 text-cyan-700 border-2 border-cyan-200 py-3 rounded-lg font-bold text-base btn-active text-center">L/R</button>
+                    <button onclick="openMedModal('大量點滴 N/S 500ml')" class="flex-1 bg-cyan-50 text-cyan-700 border-2 border-cyan-200 py-4 rounded-lg font-bold text-base btn-active text-center shadow-sm">N/S 500ml</button>
+                    <button onclick="openMedModal('大量點滴 L/R 500ml')" class="flex-1 bg-cyan-50 text-cyan-700 border-2 border-cyan-200 py-4 rounded-lg font-bold text-base btn-active text-center shadow-sm">L/R 500ml</button>
                 </div>
             </div>
 
             <!-- 輸血/備血 -->
             <div class="bg-white rounded-xl shadow-sm p-3 border border-slate-100">
-                <h3 class="font-bold text-slate-500 mb-2 text-xs flex justify-between items-center">
-                    <span>輸血 / 備血 (Blood)</span>
-                    <div class="flex gap-1">
-                        <button id="btn-b-type-輸血" onclick="setBloodType('輸血')" class="px-2 py-0.5 text-xs font-bold rounded bg-red-100 text-red-700 border border-red-300">輸血</button>
-                        <button id="btn-b-type-備血" onclick="setBloodType('備血')" class="px-2 py-0.5 text-xs font-bold rounded bg-slate-100 text-slate-600 border border-slate-300">備血</button>
-                    </div>
-                </h3>
-                <div class="grid grid-cols-4 gap-2 mb-2">
-                    <button onclick="setBloodProd('LPRBC')" id="btn-b-LPRBC" class="blood-prod border border-slate-300 py-2 rounded text-xs font-bold bg-white text-slate-700">LPRBC</button>
-                    <button onclick="setBloodProd('FFP')" id="btn-b-FFP" class="blood-prod border border-slate-300 py-2 rounded text-xs font-bold bg-white text-slate-700">FFP</button>
-                    <button onclick="setBloodProd('CRYO')" id="btn-b-CRYO" class="blood-prod border border-slate-300 py-2 rounded text-xs font-bold bg-white text-slate-700">CRYO</button>
-                    <button onclick="setBloodProd('PH')" id="btn-b-PH" class="blood-prod border border-slate-300 py-2 rounded text-xs font-bold bg-white text-slate-700">PH</button>
+                <h3 class="font-bold text-slate-500 mb-2 text-xs">輸血 / 備血 (Blood)</h3>
+                
+                <div class="flex gap-2 w-full mb-3">
+                    <button id="btn-b-type-緊急輸血" onclick="setBloodType('緊急輸血')" class="flex-1 py-3 text-sm font-bold rounded-lg bg-red-500 text-white border-2 border-red-600 shadow-sm transition-colors btn-active">緊急輸血</button>
+                    <button id="btn-b-type-輸血" onclick="setBloodType('輸血')" class="flex-1 py-3 text-sm font-bold rounded-lg bg-white text-orange-600 border-2 border-orange-200 shadow-sm transition-colors btn-active">輸血</button>
+                    <button id="btn-b-type-備血" onclick="setBloodType('備血')" class="flex-1 py-3 text-sm font-bold rounded-lg bg-white text-blue-600 border-2 border-blue-200 shadow-sm transition-colors btn-active">備血</button>
                 </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <button onclick="setBloodProd('LPRBC')" id="btn-b-LPRBC" class="blood-prod border-2 border-slate-200 py-3 rounded-lg text-sm font-bold bg-white text-slate-700 btn-active transition-colors">LPRBC</button>
+                    <button onclick="setBloodProd('FFP')" id="btn-b-FFP" class="blood-prod border-2 border-slate-200 py-3 rounded-lg text-sm font-bold bg-white text-slate-700 btn-active transition-colors">FFP</button>
+                    <button onclick="setBloodProd('CRYO')" id="btn-b-CRYO" class="blood-prod border-2 border-slate-200 py-3 rounded-lg text-sm font-bold bg-white text-slate-700 btn-active transition-colors">CRYO</button>
+                    <button onclick="setBloodProd('PH')" id="btn-b-PH" class="blood-prod border-2 border-slate-200 py-3 rounded-lg text-sm font-bold bg-white text-slate-700 btn-active transition-colors">PH</button>
+                </div>
+
                 <div class="flex gap-2 items-end">
                     <div class="w-24">
                         <label class="block text-[10px] text-slate-500 mb-1">單位 (U)</label>
-                        <input type="number" id="val-blood-u" value="2" class="w-full p-2 border border-slate-300 rounded text-sm text-center bg-slate-50 font-bold">
+                        <input type="number" id="val-blood-u" value="2" class="w-full p-3 border border-slate-300 rounded-lg text-base text-center bg-slate-50 font-bold">
                     </div>
-                    <button onclick="submitBlood()" class="flex-1 bg-red-500 text-white h-[38px] rounded font-bold text-sm btn-active shadow-sm">紀錄血品</button>
+                    <button id="btn-submit-blood" onclick="submitBlood()" class="flex-1 bg-red-500 text-white h-[46px] rounded-lg font-bold text-sm md:text-base btn-active shadow-sm transition-colors">紀錄血品</button>
                 </div>
+            </div>
+
+            <!-- 生命徵象 -->
+            <div class="bg-white rounded-xl shadow-sm p-3 border border-slate-100">
+                <h3 class="font-bold text-slate-500 mb-2 text-xs">生命徵象 (Vital Signs)</h3>
+                <div class="grid grid-cols-6 gap-1 mb-3">
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1 text-center">T(°C)</label>
+                        <input type="number" step="0.1" id="v-t" class="w-full p-1.5 border border-slate-300 rounded text-xs text-center bg-slate-50 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1 text-center">PR</label>
+                        <input type="number" id="v-pr" class="w-full p-1.5 border border-slate-300 rounded text-xs text-center bg-slate-50 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1 text-center">RR</label>
+                        <input type="number" id="v-rr" class="w-full p-1.5 border border-slate-300 rounded text-xs text-center bg-slate-50 font-bold">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] text-slate-500 mb-1 text-center">BP (mmHg)</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="v-sbp" class="w-full p-1.5 border border-slate-300 rounded text-xs text-center bg-slate-50 font-bold px-0">
+                            <span class="text-slate-400">/</span>
+                            <input type="number" id="v-dbp" class="w-full p-1.5 border border-slate-300 rounded text-xs text-center bg-slate-50 font-bold px-0">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1 text-center">SpO2(%)</label>
+                        <input type="number" id="v-spo2" class="w-full p-1.5 border border-slate-300 rounded text-xs text-center bg-slate-50 font-bold">
+                    </div>
+                </div>
+                <button onclick="submitVitals()" class="w-full bg-indigo-500 text-white h-[42px] rounded-lg font-bold text-sm md:text-base btn-active shadow-sm">紀錄 Vitals</button>
             </div>
 
             <!-- 管路處置 -->
@@ -245,28 +275,11 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 生命徵象 (Vitals) -->
-            <div class="bg-white rounded-xl shadow-sm p-3 border border-slate-100 mb-6">
-                <h3 class="font-bold text-slate-500 mb-2 text-xs">生命徵象 (Vital Signs)</h3>
-                <div class="grid grid-cols-5 gap-2 mb-2">
-                    <div><label class="block text-[10px] text-slate-500 mb-1 text-center">T (°C)</label><input type="number" step="0.1" id="v-t" class="w-full p-1.5 border border-slate-300 rounded text-sm text-center bg-slate-50 font-bold"></div>
-                    <div><label class="block text-[10px] text-slate-500 mb-1 text-center">PR</label><input type="number" id="v-pr" class="w-full p-1.5 border border-slate-300 rounded text-sm text-center bg-slate-50 font-bold"></div>
-                    <div><label class="block text-[10px] text-slate-500 mb-1 text-center">RR</label><input type="number" id="v-rr" class="w-full p-1.5 border border-slate-300 rounded text-sm text-center bg-slate-50 font-bold"></div>
-                    <div class="col-span-2"><label class="block text-[10px] text-slate-500 mb-1 text-center">BP (mmHg)</label>
-                        <div class="flex items-center gap-1">
-                            <input type="number" id="v-sbp" placeholder="收" class="w-full p-1.5 border border-slate-300 rounded text-sm text-center bg-slate-50 font-bold">
-                            <span class="text-slate-400">/</span>
-                            <input type="number" id="v-dbp" placeholder="舒" class="w-full p-1.5 border border-slate-300 rounded text-sm text-center bg-slate-50 font-bold">
-                        </div>
-                    </div>
-                </div>
-                <div class="flex gap-2 items-end">
-                    <div class="w-20"><label class="block text-[10px] text-slate-500 mb-1 text-center">SpO2 (%)</label><input type="number" id="v-spo2" class="w-full p-1.5 border border-slate-300 rounded text-sm text-center bg-slate-50 font-bold"></div>
-                    <button onclick="submitVitals()" class="flex-1 bg-indigo-500 text-white h-[34px] rounded font-bold text-sm btn-active shadow-sm">紀錄 Vitals</button>
-                </div>
+            
+            <!-- 版權宣告 (頁籤 1 底部) -->
+            <div class="text-center text-[10px] text-slate-400 mt-2 pb-6">
+                Copyright &copy; MentoLi 2026<br>此版本非正式紀錄，僅促進急救時紀錄品質
             </div>
-
         </div>
 
         <!-- ============ 頁籤 2：處置時間軸 ============ -->
@@ -279,12 +292,11 @@
                 </button>
             </div>
 
-            <!-- 過濾器 (新增 生命徵象) -->
             <div class="flex gap-2 p-2 bg-slate-900 border-b border-slate-700 overflow-x-auto no-scrollbar">
                 <button onclick="setFilter('全部')" id="flt-全部" class="filter-btn filter-active border px-3 py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">全部</button>
                 <button onclick="setFilter('給藥')" id="flt-給藥" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">給藥/點滴</button>
                 <button onclick="setFilter('心律')" id="flt-心律" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">心律/電擊</button>
-                <button onclick="setFilter('管路')" id="flt-管路" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">管路/備血</button>
+                <button onclick="setFilter('管路')" id="flt-管路" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">管路/血品</button>
                 <button onclick="setFilter('生命徵象')" id="flt-生命徵象" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">生命徵象</button>
                 <button onclick="setFilter('系統')" id="flt-系統" class="filter-btn filter-inactive border px-3 py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">系統/備註</button>
             </div>
@@ -294,7 +306,6 @@
                     <input type="text" id="custom-note" placeholder="快速自訂備註..." class="flex-1 bg-slate-800 text-white border border-slate-600 rounded px-2 py-1.5 text-sm focus:outline-none">
                     <button onclick="submitCustomNote()" class="bg-teal-600 text-white px-3 py-1.5 rounded text-sm font-bold btn-active">送出</button>
                 </div>
-                <!-- 快速備註按鈕 -->
                 <div class="flex gap-2 overflow-x-auto no-scrollbar">
                     <button onclick="logEvent('備註', '聯絡 X-ray')" class="bg-slate-700 text-slate-200 border border-slate-500 px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap btn-active">聯絡 X-ray</button>
                     <button onclick="logEvent('備註', '家屬抵達')" class="bg-slate-700 text-slate-200 border border-slate-500 px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap btn-active">家屬抵達</button>
@@ -302,13 +313,18 @@
                 </div>
             </div>
 
-            <ul id="timeline-list" class="p-2 space-y-2 pb-[120px]">
+            <ul id="timeline-list" class="p-2 space-y-2 pb-[140px]">
                 <li class="text-slate-500 text-sm text-center mt-10">尚未開始急救</li>
             </ul>
 
             <div class="p-2 bg-slate-900 border-t border-slate-700 fixed bottom-[60px] left-0 right-0 z-20 md:max-w-3xl md:mx-auto">
-                <button onclick="generateReport()" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold text-sm btn-active flex justify-center items-center gap-2 shadow-lg"><i class="fa-solid fa-file-lines"></i> 生成護理紀錄</button>
-                <textarea id="report-output" class="w-full h-24 bg-slate-800 text-slate-200 border border-slate-600 rounded p-2 text-xs no-scrollbar hidden mt-2" readonly></textarea>
+                <button onclick="openReportModal()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold text-sm md:text-base btn-active flex justify-center items-center gap-2 shadow-lg">
+                    <i class="fa-solid fa-file-lines"></i> 查看護理紀錄
+                </button>
+                <!-- 版權宣告 (頁籤 2 底部) -->
+                <div class="text-center text-[10px] text-slate-500 mt-2 leading-tight">
+                    Copyright &copy; MentoLi 2026<br>此版本非正式紀錄，僅促進急救時紀錄品質
+                </div>
             </div>
         </div>
     </div>
@@ -316,36 +332,46 @@
     <!-- ==================== 底部導航列 ==================== -->
     <div class="fixed bottom-0 w-full bg-white border-t border-slate-200 flex h-[60px] z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] md:max-w-3xl md:mx-auto md:left-0 md:right-0">
         <button onclick="switchMainTab('actions')" id="nav-actions" class="flex-1 flex flex-col items-center justify-center text-blue-600 font-bold transition-colors">
-            <i class="fa-solid fa-syringe text-xl mb-1"></i>
-            <span class="text-[10px]">執行處置</span>
+            <i class="fa-solid fa-syringe text-2xl mb-1"></i>
+            <span class="text-xs md:text-sm mt-0.5">執行處置</span>
         </button>
         <button onclick="switchMainTab('timeline')" id="nav-timeline" class="flex-1 flex flex-col items-center justify-center text-slate-400 font-medium transition-colors">
-            <i class="fa-solid fa-list-ul text-xl mb-1"></i>
-            <span class="text-[10px]">時間軸</span>
+            <i class="fa-solid fa-list-ul text-2xl mb-1"></i>
+            <span class="text-xs md:text-sm mt-0.5">時間軸</span>
         </button>
     </div>
 
     <!-- ==================== 彈出視窗 (Modals) ==================== -->
     <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex justify-center items-center p-4">
         
-        <!-- 1. 藥物數量快選 Modal (更新「支」的位置) -->
+        <!-- 1. 藥物智能快選 Modal -->
         <div id="modal-med" class="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl hidden flex-col gap-4">
-            <h3 class="text-lg font-bold text-slate-700 text-center border-b pb-2" id="med-modal-title">藥物名稱</h3>
             
-            <!-- 加減號數量區塊 -->
+            <div class="text-center border-b pb-2">
+                <h3 class="text-xl font-extrabold text-slate-800" id="med-modal-title">藥物名稱</h3>
+                <p class="text-xs font-bold text-slate-400 mt-1" id="med-modal-generic">Generic Name</p>
+            </div>
+            
+            <div id="med-incompat-warning" class="hidden bg-red-50 border border-red-200 text-red-600 text-[11px] font-bold p-2 rounded text-center">
+                🚫 提醒：患者已使用 <span id="med-incompat-list" class="underline"></span>，兩者不相容
+            </div>
+
+            <div id="med-calc-panel" class="bg-blue-50 rounded-lg p-2 text-center">
+                <div id="med-modal-base" class="text-[11px] text-blue-500 font-bold mb-1">1 支 = -- mg / -- ml</div>
+                <div id="med-modal-total" class="text-lg text-blue-700 font-extrabold">總計: -- mg / -- ml</div>
+            </div>
+            
             <div class="flex justify-center items-center gap-6 py-1">
                 <button onclick="adjMedQty(-0.5)" class="w-12 h-12 rounded-full bg-slate-100 text-slate-600 text-2xl font-bold btn-active border border-slate-300">-</button>
                 <div class="flex items-baseline gap-1 w-16 justify-center">
                     <span id="med-modal-qty" class="text-4xl font-bold text-blue-600">1</span>
-                    <span class="text-sm font-bold text-blue-600">支</span>
+                    <span id="med-modal-unit" class="text-sm font-bold text-blue-600">支</span>
                 </div>
                 <button onclick="adjMedQty(1)" class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 text-2xl font-bold btn-active border border-blue-300">+</button>
             </div>
             
-            <!-- 動態快捷支數按鈕區 (移除"支"字) -->
             <div id="quick-qty-container" class="flex justify-center gap-2 empty:hidden"></div>
             
-            <!-- 動態泡製溶液與 Pump Run -->
             <div id="med-prep-container" class="hidden flex-col gap-3 bg-slate-50 border border-slate-200 p-3 rounded-lg">
                 <div class="flex justify-between items-center">
                     <label class="text-sm font-bold text-slate-600">泡製溶液</label>
@@ -385,28 +411,34 @@
             
             <div>
                 <label class="block text-sm font-bold text-slate-600 mb-2">1. 評估心律</label>
-                <select id="cycle-rhythm" onchange="autoSelectPulse(this.value)" class="w-full p-3 border border-slate-300 rounded-xl text-base bg-slate-50 font-bold">
-                    <option value="" disabled selected>請選擇當下心律</option>
-                    <option value="VF">VF</option>
-                    <option value="VT">VT</option>
-                    <option value="PULSE VT">PULSE VT</option>
-                    <option value="Asystole">Asystole</option>
-                    <option value="PEA">PEA</option>
-                    <option value="PSVT">PSVT</option>
-                    <option value="Bradycardia">Bradycardia</option>
-                    <option value="ST">ST</option>
-                </select>
+                <div class="flex flex-col gap-2">
+                    <div class="flex gap-2">
+                        <button onclick="selectCycleRhythm('Asystole')" id="cr-Asystole" class="cycle-r-btn flex-1 bg-slate-50 text-slate-500 border border-slate-200 py-2 rounded-lg font-bold text-sm btn-active">Asystole</button>
+                        <button onclick="selectCycleRhythm('PEA')" id="cr-PEA" class="cycle-r-btn flex-1 bg-slate-50 text-slate-500 border border-slate-200 py-2 rounded-lg font-bold text-sm btn-active">PEA</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="selectCycleRhythm('VF')" id="cr-VF" class="cycle-r-btn flex-1 bg-slate-50 text-slate-500 border border-slate-200 py-2 rounded-lg font-bold text-sm btn-active">VF</button>
+                        <button onclick="selectCycleRhythm('VT')" id="cr-VT" class="cycle-r-btn flex-1 bg-slate-50 text-slate-500 border border-slate-200 py-2 rounded-lg font-bold text-sm btn-active">VT</button>
+                        <button onclick="selectCycleRhythm('PULSE VT')" id="cr-PULSE VT" class="cycle-r-btn flex-1 bg-slate-50 text-slate-500 border border-slate-200 py-2 rounded-lg font-bold text-xs btn-active">PULSE VT</button>
+                    </div>
+                    <hr class="my-1 border-slate-100">
+                    <div class="flex gap-2">
+                        <button onclick="selectCycleRhythm('PSVT')" id="cr-PSVT" class="cycle-r-btn flex-1 bg-slate-50 text-slate-500 border border-slate-200 py-2 rounded-lg font-bold text-sm btn-active">PSVT</button>
+                        <button onclick="selectCycleRhythm('Bradycardia')" id="cr-Bradycardia" class="cycle-r-btn flex-1 bg-slate-50 text-slate-500 border border-slate-200 py-2 rounded-lg font-bold text-xs btn-active px-1">Bradycardia</button>
+                        <button onclick="selectCycleRhythm('ST')" id="cr-ST" class="cycle-r-btn flex-1 bg-slate-50 text-slate-500 border border-slate-200 py-2 rounded-lg font-bold text-sm btn-active">ST</button>
+                    </div>
+                </div>
             </div>
             
             <div>
                 <label class="block text-sm font-bold text-slate-600 mb-2">2. 脈搏觸診 (已自動連動)</label>
                 <div class="flex gap-2">
-                    <button id="btn-pulse-no" onclick="setPulse('無脈搏')" class="flex-1 py-3 border-2 border-slate-200 bg-slate-50 text-slate-500 rounded-xl font-bold">無脈搏</button>
-                    <button id="btn-pulse-yes" onclick="setPulse('摸到脈搏')" class="flex-1 py-3 border-2 border-slate-200 bg-slate-50 text-slate-500 rounded-xl font-bold">摸到脈搏</button>
+                    <button id="btn-pulse-no" onclick="setPulse('無脈搏')" class="flex-1 py-3 border-2 border-slate-200 bg-slate-50 text-slate-500 rounded-xl font-bold transition-colors">無脈搏</button>
+                    <button id="btn-pulse-yes" onclick="setPulse('摸到脈搏')" class="flex-1 py-3 border-2 border-slate-200 bg-slate-50 text-slate-500 rounded-xl font-bold transition-colors">摸到脈搏</button>
                 </div>
             </div>
 
-            <div class="flex gap-3 mt-4">
+            <div class="flex gap-3 mt-2">
                 <button onclick="closeModal()" class="flex-1 py-3 bg-slate-200 text-slate-700 rounded-xl font-bold btn-active">取消</button>
                 <button onclick="confirmCycle()" class="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold btn-active">完成評估</button>
             </div>
@@ -420,6 +452,22 @@
             <ul id="summary-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto no-scrollbar text-slate-200 text-sm">
             </ul>
             <button onclick="closeModal()" class="w-full py-3 bg-slate-600 text-white rounded-xl font-bold btn-active mt-2">關閉</button>
+        </div>
+
+        <!-- 4. 全螢幕護理紀錄 Modal -->
+        <div id="modal-report" class="bg-slate-800 w-full h-full md:max-w-3xl md:mx-auto md:h-auto md:max-h-[90vh] md:rounded-2xl p-5 shadow-2xl hidden flex-col gap-4 relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base border border-slate-500 w-8 h-8 flex justify-center items-center rounded bg-slate-700">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-xl font-bold text-white border-b border-slate-600 pb-3 flex items-center gap-2 mt-2">
+                <i class="fa-solid fa-file-lines text-blue-400"></i> 急救護理紀錄
+            </h3>
+            <textarea id="report-output" class="flex-1 w-full bg-slate-900 text-slate-200 border border-slate-600 rounded-lg p-4 text-sm no-scrollbar resize-none focus:outline-none" readonly></textarea>
+            <div class="flex gap-3 pt-2">
+                <button onclick="copyReport()" class="flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg btn-active flex justify-center items-center gap-2 shadow-lg transition-colors">
+                    <i class="fa-solid fa-copy"></i> 一鍵複製紀錄
+                </button>
+            </div>
         </div>
 
     </div>
@@ -440,31 +488,47 @@
         let audioEnabled = true;
 
         let medSummaryDict = {};
+        let givenMedSet = new Set(); 
         let currentFilter = '全部';
         
-        // 藥物狀態
         let activeMedName = '';
         let activeMedQty = 1;
         let prepSol = 'N/S';
         let prepVol = '250';
 
-        // 輸血狀態
-        let bloodAction = '輸血';
+        let bloodAction = '緊急輸血';
         let bloodProd = '';
+        let bloodColorBg = 'bg-red-500';
+        
         let activePulse = '';
+        let selectedCycleRhythm = '';
 
-        // 藥物快捷按鈕配置
-        const medQuickConfig = {
-            'Adenocor': [1, 2],
-            'Atropine 1mg': [0.5, 1],
-            'CORDARONE 150mg': [1, 2, 6],
-            'Dopamin 200mg': [2, 4],
-            'DORMICUM 5mg': [0.5, 1],
-            'Norepinephrine': [2, 4],
-            'Rolikan 7% 20mL': [5, 10]
+        // --- 藥物智能字典 ---
+        const medDict = {
+            'Adrenalin 1mg': { generic: 'Epinephrine', val: 1, unit: 'mg', ml: 1, quick: [] },
+            'Adenocor': { generic: 'Adenosine', val: 6, unit: 'mg', ml: 2, quick: [1, 2] },
+            'Atropine 1mg': { generic: 'Atropine', val: 1, unit: 'mg', ml: 1, quick: [0.5, 1] },
+            'CORDARONE 150mg': { generic: 'Amiodarone', val: 150, unit: 'mg', ml: 3, quick: [1, 2, 6] },
+            'Dopamin 200mg': { generic: 'Dopamine', val: 200, unit: 'mg', ml: 5, quick: [2, 4] },
+            'DORMICUM 5mg': { generic: 'Midazolam', val: 5, unit: 'mg', ml: 1, quick: [0.5, 1] },
+            'FURSEMIDE 20mg': { generic: 'Furosemide', val: 20, unit: 'mg', ml: 2, quick: [] },
+            'MgSO4 2g': { generic: '10% Mag. Sulfate', val: 2, unit: 'g', ml: 20, quick: [] },
+            'Norepinephrine': { generic: 'Norepinephrine', val: 4, unit: 'mg', ml: 4, quick: [2, 4] },
+            'Rolikan 7% 20mL': { generic: '7% Sodium Bicarbonate', val: 16.6, unit: 'mEq', ml: 20, quick: [5, 10] },
+            'Vitacal': { generic: 'Calcium Chloride', val: 400, unit: 'mg', ml: 20, quick: [] },
+            'Vitagen 50%': { generic: '50% Glucose', val: 10, unit: 'g', ml: 20, quick: [] }
         };
 
-        // 時鐘初始化
+        // --- 不相容矩陣 ---
+        const incompatMatrix = {
+            'Rolikan 7% 20mL': ['Adrenalin 1mg', 'CORDARONE 150mg', 'Dopamin 200mg', 'Norepinephrine', 'Vitacal'],
+            'Adrenalin 1mg': ['Rolikan 7% 20mL'],
+            'CORDARONE 150mg': ['Rolikan 7% 20mL'],
+            'Dopamin 200mg': ['Rolikan 7% 20mL'],
+            'Norepinephrine': ['Rolikan 7% 20mL'],
+            'Vitacal': ['Rolikan 7% 20mL']
+        };
+
         setInterval(() => {
             let now = new Date();
             document.getElementById('real-clock').innerText = now.toTimeString().substring(0,8);
@@ -481,6 +545,9 @@
             let s = (sec % 60).toString().padStart(2, '0');
             return `${h}:${m}:${s}`;
         }
+        function formatDose(val) {
+            return Number.isInteger(val) ? val : parseFloat(val.toFixed(1));
+        }
 
         // --- 核心計時 ---
         function toggleCPR() {
@@ -492,6 +559,7 @@
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 audioCtx = new AudioContext();
             }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
 
             if (!isRunning) {
                 if(!systemStartTime) systemStartTime = document.getElementById('real-clock').innerText;
@@ -507,23 +575,18 @@
                 logEvent('系統', '啟動急救計時');
                 
                 timerInterval = setInterval(() => {
-                    // 總時間 (受 ROSC 影響)
                     if(isTotalTimerRunning) {
                         totalSeconds++;
                         document.getElementById('total-timer').innerText = formatTimeFull(totalSeconds);
                     }
-                    
-                    // CPR 循環
                     if(cprSeconds > 0) {
                         cprSeconds--;
                         document.getElementById('cpr-timer').innerText = formatTimeMinSec(cprSeconds);
                     } else if (cprSeconds === 0) {
                         showToast("⚠️ 2分鐘循環時間到");
-                        if(audioEnabled) playSharpBeep(1);
+                        if(audioEnabled) playCycleBeep(); 
                         cprSeconds = -1; 
                     }
-
-                    // Epi 倒數
                     if (epiSeconds > 0) {
                         epiSeconds--;
                         let badge = document.getElementById('epi-timer-badge');
@@ -553,8 +616,6 @@
             logEvent('系統', '★★ 達成 ROSC ★★');
             cprSeconds = -1;
             document.getElementById('cpr-timer').innerText = "--:--";
-            
-            // 暫停總時間
             isTotalTimerRunning = false;
             
             if(epiSeconds > 0) {
@@ -569,10 +630,11 @@
 
         function logCode999() {
             logEvent('系統', '🚨 啟動 999 呼叫');
+            showToast("🚨 已啟動 999", true);
             if(!isRunning) toggleCPR(); 
         }
 
-        // --- 音效 (增強版連續尖銳方波) ---
+        // --- 音效 ---
         function toggleSound() {
             audioEnabled = !audioEnabled;
             let icon = document.getElementById('btn-sound');
@@ -591,62 +653,90 @@
             function beep() {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                
                 osc.type = 'square'; 
                 osc.frequency.value = 1200; 
                 gain.gain.value = 2.0; 
-                
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
-                
                 osc.start();
                 setTimeout(() => osc.stop(), 200); 
             }
             beep();
             if(times > 1) setTimeout(() => playSharpBeep(times - 1), 300);
         }
+        function playCycleBeep() {
+            if(!audioCtx || !audioEnabled) return;
+            function lowBeep() {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine'; 
+                osc.frequency.value = 400; 
+                gain.gain.value = 2.0; 
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                setTimeout(() => osc.stop(), 400); 
+            }
+            lowBeep();
+            setTimeout(lowBeep, 600); 
+        }
 
-        // --- 藥物動態 Modal 邏輯 ---
+        // --- 藥物防呆與處理 ---
+        function checkIncompat(medName) {
+            if(!incompatMatrix[medName]) return [];
+            let conflicts = [];
+            incompatMatrix[medName].forEach(incompatMed => {
+                if(givenMedSet.has(incompatMed)) conflicts.push(incompatMed);
+            });
+            return conflicts;
+        }
+
         function updateMedSummary(name, qty) {
             if(!medSummaryDict[name]) medSummaryDict[name] = 0;
             medSummaryDict[name] += qty;
         }
 
         function giveEpi() {
-            let name = 'Adrenalin 1mg';
-            updateMedSummary(name, 1);
-            let count = medSummaryDict[name];
-            
-            epiSeconds = 180;
-            let countBadge = document.getElementById('epi-badge-count');
-            let timerBadge = document.getElementById('epi-timer-badge');
-            
-            countBadge.innerText = count;
-            countBadge.classList.remove('hidden');
-            
-            timerBadge.innerText = "03:00";
-            timerBadge.classList.remove('hidden', 'bg-red-800', 'bg-slate-500', 'timer-warning');
-            timerBadge.classList.add('bg-red-600');
-            
-            logEvent('給藥', `${name} (累計:${count}支)`);
+            openMedModal('Adrenalin 1mg');
         }
 
         function openMedModal(name) {
             activeMedName = name;
             activeMedQty = 1;
-            
             prepSol = 'N/S';
             prepVol = '250';
-            updatePrepUI();
-
-            document.getElementById('med-modal-title').innerText = name;
-            document.getElementById('med-modal-qty').innerText = activeMedQty;
             
-            // 注入快捷按鈕 (純數字)
+            document.getElementById('med-modal-title').innerText = name;
+            let genericEl = document.getElementById('med-modal-generic');
+            let calcPanel = document.getElementById('med-calc-panel');
+            
+            let info = medDict[name];
+            if(info) {
+                genericEl.innerText = info.generic;
+                genericEl.classList.remove('hidden');
+                calcPanel.classList.remove('hidden');
+                document.getElementById('med-modal-base').innerText = `1 支 = ${info.val} ${info.unit} / ${info.ml} ml`;
+            } else {
+                genericEl.classList.add('hidden');
+                calcPanel.classList.add('hidden');
+            }
+
+            let unitLabel = document.getElementById('med-modal-unit');
+            unitLabel.innerText = name.includes('500ml') ? '瓶' : '支';
+
+            let conflicts = checkIncompat(name);
+            let warnBox = document.getElementById('med-incompat-warning');
+            if(conflicts.length > 0) {
+                warnBox.classList.remove('hidden');
+                document.getElementById('med-incompat-list').innerText = conflicts.join(', ');
+            } else {
+                warnBox.classList.add('hidden');
+            }
+
             let quickContainer = document.getElementById('quick-qty-container');
             quickContainer.innerHTML = '';
-            if(medQuickConfig[name]) {
-                medQuickConfig[name].forEach(num => {
+            if(info && info.quick.length > 0) {
+                info.quick.forEach(num => {
                     let btn = document.createElement('button');
                     btn.className = "px-6 py-2 bg-slate-100 text-slate-700 font-bold text-lg rounded-lg border border-slate-300 btn-active shadow-sm";
                     btn.innerText = num;
@@ -655,12 +745,9 @@
                 });
             }
 
+            updatePrepUI();
             refreshMedUI();
-
-            document.getElementById('modal-backdrop').classList.remove('hidden');
-            document.getElementById('modal-med').classList.remove('hidden');
-            document.getElementById('modal-cycle').classList.add('hidden');
-            document.getElementById('modal-summary').classList.add('hidden');
+            showModal('modal-med');
         }
 
         function adjMedQty(val) {
@@ -672,8 +759,15 @@
 
         function refreshMedUI() {
             document.getElementById('med-modal-qty').innerText = activeMedQty;
-            let prepContainer = document.getElementById('med-prep-container');
             
+            let info = medDict[activeMedName];
+            if(info) {
+                let calcVal = formatDose(info.val * activeMedQty);
+                let calcMl = formatDose(info.ml * activeMedQty);
+                document.getElementById('med-modal-total').innerText = `總計: ${calcVal} ${info.unit} / ${calcMl} ml`;
+            }
+
+            let prepContainer = document.getElementById('med-prep-container');
             let needPrep = (activeMedName === 'Norepinephrine' || activeMedName.includes('Dopamin') || (activeMedName.includes('CORDARONE') && activeMedQty >= 6));
             
             if(needPrep) {
@@ -697,54 +791,105 @@
         }
 
         function confirmMed() {
-            updateMedSummary(activeMedName, activeMedQty);
             let type = activeMedName.includes('大量點滴') ? '大量點滴' : '給藥';
-            let detail = `${activeMedName} x ${activeMedQty} 支`;
+            let unit = activeMedName.includes('500ml') ? '瓶' : '支';
+            let detail = `${activeMedName} x ${activeMedQty} ${unit}`;
             
+            let info = medDict[activeMedName];
+            if(info) {
+                let calcVal = formatDose(info.val * activeMedQty);
+                let calcMl = formatDose(info.ml * activeMedQty);
+                detail += ` (${calcVal}${info.unit}/${calcMl}ml)`;
+            }
+
             let needPrep = (activeMedName === 'Norepinephrine' || activeMedName.includes('Dopamin') || (activeMedName.includes('CORDARONE') && activeMedQty >= 6));
-            
             if(needPrep) {
                 let pr = document.getElementById('med-pump-run').value;
                 detail += ` (加至 ${prepSol} ${prepVol}mL, Pump run: ${pr} 滴/分)`;
             }
             
-            logEvent(type, detail);
+            if(activeMedName.includes('Adrenalin')) {
+                updateMedSummary(activeMedName, activeMedQty);
+                let count = medSummaryDict[activeMedName];
+                epiSeconds = 180;
+                let countBadge = document.getElementById('epi-badge-count');
+                let timerBadge = document.getElementById('epi-timer-badge');
+                countBadge.innerText = count;
+                countBadge.classList.remove('hidden');
+                timerBadge.innerText = "03:00";
+                timerBadge.classList.remove('hidden', 'bg-red-800', 'bg-slate-500', 'timer-warning');
+                timerBadge.classList.add('bg-red-600');
+            } else {
+                updateMedSummary(activeMedName, activeMedQty);
+            }
+
+            let conflicts = checkIncompat(activeMedName);
+            givenMedSet.add(activeMedName);
+            
+            let event = { id: Date.now(), time: document.getElementById('real-clock').innerText, action: type, detail: detail };
+            events.push(event);
+            renderTimeline();
+            
+            if(conflicts.length > 0) {
+                setTimeout(() => { showToast(`⚠️ 注意：與 ${conflicts.join(', ')} 不相容，請分開 Set`, true); }, 100);
+            } else {
+                showToast(`${type}已紀錄`);
+            }
+            
             closeModal();
         }
 
-        // --- 輸血/備血邏輯 ---
+        // --- 輸血/備血 ---
         function setBloodType(type) {
             bloodAction = type;
+            let btnE = document.getElementById('btn-b-type-緊急輸血');
             let btnB = document.getElementById('btn-b-type-輸血');
             let btnP = document.getElementById('btn-b-type-備血');
-            if(type === '輸血') {
-                btnB.className = "px-2 py-0.5 text-xs font-bold rounded bg-red-100 text-red-700 border border-red-300";
-                btnP.className = "px-2 py-0.5 text-xs font-bold rounded bg-slate-100 text-slate-600 border border-slate-300";
-            } else {
-                btnB.className = "px-2 py-0.5 text-xs font-bold rounded bg-slate-100 text-slate-600 border border-slate-300";
-                btnP.className = "px-2 py-0.5 text-xs font-bold rounded bg-red-100 text-red-700 border border-red-300";
+            
+            btnE.className = "flex-1 py-3 text-sm font-bold rounded-lg bg-white text-red-600 border-2 border-red-200 shadow-sm transition-colors";
+            btnB.className = "flex-1 py-3 text-sm font-bold rounded-lg bg-white text-orange-600 border-2 border-orange-200 shadow-sm transition-colors";
+            btnP.className = "flex-1 py-3 text-sm font-bold rounded-lg bg-white text-blue-600 border-2 border-blue-200 shadow-sm transition-colors";
+
+            if(type === '緊急輸血') {
+                btnE.classList.replace('bg-white', 'bg-red-500');
+                btnE.classList.replace('text-red-600', 'text-white');
+                bloodColorBg = 'bg-red-500';
             }
+            if(type === '輸血') {
+                btnB.classList.replace('bg-white', 'bg-orange-500');
+                btnB.classList.replace('text-orange-600', 'text-white');
+                bloodColorBg = 'bg-orange-500';
+            }
+            if(type === '備血') {
+                btnP.classList.replace('bg-white', 'bg-blue-600');
+                btnP.classList.replace('text-blue-600', 'text-white');
+                bloodColorBg = 'bg-blue-600';
+            }
+
+            if(bloodProd) setBloodProd(bloodProd);
+            document.getElementById('btn-submit-blood').className = `flex-1 ${bloodColorBg} text-white h-[46px] rounded-lg font-bold text-sm md:text-base btn-active shadow-sm transition-colors`;
         }
+
         function setBloodProd(prod) {
             bloodProd = prod;
             document.querySelectorAll('.blood-prod').forEach(el => {
-                el.classList.replace('bg-red-500', 'bg-white');
-                el.classList.replace('text-white', 'text-slate-700');
+                el.className = "blood-prod border-2 border-slate-200 py-3 rounded-lg text-sm font-bold bg-white text-slate-700 btn-active transition-colors";
             });
             let act = document.getElementById('btn-b-' + prod);
-            act.classList.replace('bg-white', 'bg-red-500');
-            act.classList.replace('text-slate-700', 'text-white');
+            act.className = `blood-prod border-2 py-3 rounded-lg text-sm font-bold ${bloodColorBg} text-white btn-active transition-colors border-transparent`;
         }
+
         function submitBlood() {
             if(!bloodProd) return alert('請先選擇血品');
             let u = document.getElementById('val-blood-u').value;
             logEvent('血品', `[${bloodAction}] ${bloodProd} ${u}U`);
-            // 重置UI
             bloodProd = '';
-            document.querySelectorAll('.blood-prod').forEach(el => { el.classList.replace('bg-red-500', 'bg-white'); el.classList.replace('text-white', 'text-slate-700'); });
+            document.querySelectorAll('.blood-prod').forEach(el => { 
+                el.className = "blood-prod border-2 border-slate-200 py-3 rounded-lg text-sm font-bold bg-white text-slate-700 btn-active transition-colors";
+            });
         }
 
-        // --- 生命徵象 Vitals ---
+        // --- 生命徵象 ---
         function submitVitals() {
             let t = document.getElementById('v-t').value;
             let pr = document.getElementById('v-pr').value;
@@ -761,10 +906,8 @@
             if(spo2) items.push(`SpO2:${spo2}%`);
             
             if(items.length === 0) return alert('請至少輸入一項生命徵象');
-            
             logEvent('生命徵象', items.join(', '));
             
-            // 清空輸入
             document.getElementById('v-t').value = '';
             document.getElementById('v-pr').value = '';
             document.getElementById('v-rr').value = '';
@@ -773,65 +916,56 @@
             document.getElementById('v-spo2').value = '';
         }
 
-        // --- 藥物總計 Modal ---
-        function openSummaryModal() {
-            let list = document.getElementById('summary-list');
-            list.innerHTML = '';
-            
-            if(Object.keys(medSummaryDict).length === 0) {
-                list.innerHTML = '<li class="text-slate-400 text-center py-4">尚未給予任何藥物</li>';
-            } else {
-                for(let [name, qty] of Object.entries(medSummaryDict)) {
-                    list.innerHTML += `<li class="flex justify-between border-b border-slate-700 py-2">
-                        <span>${name}</span>
-                        <span class="font-bold text-teal-300">${qty}</span>
-                    </li>`;
-                }
-            }
-
-            document.getElementById('modal-backdrop').classList.remove('hidden');
-            document.getElementById('modal-summary').classList.remove('hidden');
-            document.getElementById('modal-med').classList.add('hidden');
-            document.getElementById('modal-cycle').classList.add('hidden');
-        }
-
-        // --- 循環評估 Modal ---
+        // --- 循環評估 ---
         function openCycleModal() {
             document.getElementById('cycle-count-label').innerText = `第 ${cycleCount} 循環`;
-            activePulse = '';
-            document.getElementById('cycle-rhythm').value = "";
+            selectedCycleRhythm = '';
             setPulse('');
-            
-            document.getElementById('modal-backdrop').classList.remove('hidden');
-            document.getElementById('modal-cycle').classList.remove('hidden');
-            document.getElementById('modal-med').classList.add('hidden');
-            document.getElementById('modal-summary').classList.add('hidden');
+            document.querySelectorAll('.cycle-r-btn').forEach(btn => {
+                btn.classList.replace('bg-red-100', 'bg-slate-50');
+                btn.classList.replace('bg-blue-100', 'bg-slate-50');
+                btn.classList.replace('border-red-400', 'border-slate-200');
+                btn.classList.replace('border-blue-400', 'border-slate-200');
+            });
+            showModal('modal-cycle');
         }
 
-        function autoSelectPulse(rhythm) {
-            let noPulse = ['VF', 'Asystole', 'PEA'];
-            let hasPulse = ['PSVT', 'Bradycardia', 'VT', 'PULSE VT', 'ST'];
+        function selectCycleRhythm(rhythm) {
+            selectedCycleRhythm = rhythm;
+            let noPulseGroup = ['VF', 'VT', 'PULSE VT', 'Asystole', 'PEA'];
             
-            if(noPulse.includes(rhythm)) setPulse('無脈搏');
-            else if(hasPulse.includes(rhythm)) setPulse('摸到脈搏');
+            document.querySelectorAll('.cycle-r-btn').forEach(btn => {
+                btn.classList.replace('bg-red-100', 'bg-slate-50');
+                btn.classList.replace('bg-blue-100', 'bg-slate-50');
+                btn.classList.replace('border-red-400', 'border-slate-200');
+                btn.classList.replace('border-blue-400', 'border-slate-200');
+            });
+
+            let activeBtn = document.getElementById('cr-' + rhythm);
+            if(noPulseGroup.includes(rhythm)) {
+                activeBtn.classList.replace('bg-slate-50', 'bg-red-100');
+                activeBtn.classList.replace('border-slate-200', 'border-red-400');
+                setPulse('無脈搏');
+            } else {
+                activeBtn.classList.replace('bg-slate-50', 'bg-blue-100');
+                activeBtn.classList.replace('border-slate-200', 'border-blue-400');
+                setPulse('摸到脈搏');
+            }
         }
 
         function setPulse(val) {
             activePulse = val;
             let btnNo = document.getElementById('btn-pulse-no');
             let btnYes = document.getElementById('btn-pulse-yes');
-            
-            btnNo.className = 'flex-1 py-3 rounded-xl font-bold border-2 ' + (val === '無脈搏' ? 'border-red-400 bg-red-100 text-red-700' : 'border-slate-200 bg-slate-50 text-slate-500');
-            btnYes.className = 'flex-1 py-3 rounded-xl font-bold border-2 ' + (val === '摸到脈搏' ? 'border-emerald-400 bg-emerald-100 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500');
+            btnNo.className = 'flex-1 py-3 rounded-xl font-bold border-2 transition-colors ' + (val === '無脈搏' ? 'border-red-400 bg-red-100 text-red-700' : 'border-slate-200 bg-slate-50 text-slate-500');
+            btnYes.className = 'flex-1 py-3 rounded-xl font-bold border-2 transition-colors ' + (val === '摸到脈搏' ? 'border-emerald-400 bg-emerald-100 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500');
         }
 
         function confirmCycle() {
-            let rhythm = document.getElementById('cycle-rhythm').value;
-            if(!rhythm) return alert('請選擇心律');
+            if(!selectedCycleRhythm) return alert('請選擇心律');
             if(!activePulse) return alert('請選擇脈搏狀態');
             
-            logEvent('循環評估', `[第${cycleCount}循環] 心律: ${rhythm}, ${activePulse}`);
-            
+            logEvent('循環評估', `[第${cycleCount}循環] 心律: ${selectedCycleRhythm}, ${activePulse}`);
             cprSeconds = 120;
             cycleCount++;
             document.getElementById('cpr-timer').innerText = "02:00";
@@ -842,9 +976,18 @@
             closeModal();
         }
 
+        // --- 通用切換 ---
+        function showModal(modalId) {
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            ['modal-med', 'modal-cycle', 'modal-summary', 'modal-report'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                document.getElementById(id).classList.remove('flex');
+            });
+            document.getElementById(modalId).classList.remove('hidden');
+            document.getElementById(modalId).classList.add('flex');
+        }
         function closeModal() { document.getElementById('modal-backdrop').classList.add('hidden'); }
 
-        // --- 心律與管路 ---
         const shockable = ['VF', 'VT', 'PULSE VT'];
         function logRhythm(rhythm) {
             logEvent('心律', rhythm);
@@ -872,16 +1015,22 @@
         }
         function logTube(type, detail) { logEvent('管路', `[${type}] ${detail}`); }
 
-        // --- 核心紀錄與 Toast ---
         function showToast(msg, isAlert = false) {
             let toast = document.getElementById('toast');
+            let icon = document.getElementById('toast-icon');
             document.getElementById('toast-msg').innerText = msg;
-            if(isAlert) toast.classList.replace('bg-slate-800', 'bg-red-600');
-            else toast.classList.replace('bg-red-600', 'bg-slate-800');
+            
+            if(isAlert) {
+                toast.classList.replace('bg-slate-800', 'bg-red-600');
+                icon.className = "fa-solid fa-triangle-exclamation text-white";
+            } else {
+                toast.classList.replace('bg-red-600', 'bg-slate-800');
+                icon.className = "fa-solid fa-circle-check text-emerald-400";
+            }
             
             toast.classList.remove('hidden', 'opacity-0');
-            setTimeout(() => toast.classList.add('opacity-0'), 2000);
-            setTimeout(() => toast.classList.add('hidden'), 2300);
+            setTimeout(() => toast.classList.add('opacity-0'), 3000);
+            setTimeout(() => toast.classList.add('hidden'), 3300);
         }
 
         function submitCustomNote() {
@@ -893,18 +1042,12 @@
         }
 
         function logEvent(action, detail) {
-            let event = {
-                id: Date.now(),
-                time: document.getElementById('real-clock').innerText,
-                action: action,
-                detail: detail
-            };
+            let event = { id: Date.now(), time: document.getElementById('real-clock').innerText, action: action, detail: detail };
             events.push(event);
             if(!action.includes('系統')) showToast(`${action}已紀錄`);
             renderTimeline();
         }
 
-        // --- 雙頁籤與時間軸過濾 ---
         function switchMainTab(tab) {
             let navAct = document.getElementById('nav-actions');
             let navTime = document.getElementById('nav-timeline');
@@ -914,19 +1057,15 @@
             if(tab === 'actions') {
                 navAct.classList.replace('text-slate-400', 'text-blue-600');
                 navTime.classList.replace('text-blue-600', 'text-slate-400');
-                
                 viewTime.classList.add('hidden');
                 viewTime.classList.remove('flex');
-                
                 viewAct.classList.remove('hidden');
                 viewAct.classList.add('flex');
             } else {
                 navTime.classList.replace('text-slate-400', 'text-blue-600');
                 navAct.classList.replace('text-blue-600', 'text-slate-400');
-                
                 viewAct.classList.add('hidden');
                 viewAct.classList.remove('flex');
-                
                 viewTime.classList.remove('hidden');
                 viewTime.classList.add('flex');
                 setFilter('全部');
@@ -1004,11 +1143,27 @@
             }
         }
 
-        // --- 報表生成 ---
-        function generateReport() {
+        function openSummaryModal() {
+            let list = document.getElementById('summary-list');
+            list.innerHTML = '';
+            
+            if(Object.keys(medSummaryDict).length === 0) {
+                list.innerHTML = '<li class="text-slate-400 text-center py-4">尚未給予任何藥物</li>';
+            } else {
+                for(let [name, qty] of Object.entries(medSummaryDict)) {
+                    let unit = name.includes('500ml') ? '瓶' : '支';
+                    list.innerHTML += `<li class="flex justify-between border-b border-slate-700 py-2">
+                        <span>${name}</span>
+                        <span class="font-bold text-teal-300">${qty} ${unit}</span>
+                    </li>`;
+                }
+            }
+            showModal('modal-summary');
+        }
+
+        function openReportModal() {
             if (events.length === 0) return alert("無紀錄可生成！");
             let output = document.getElementById('report-output');
-            output.classList.remove('hidden');
             let sorted = [...events].sort((a, b) => a.time.localeCompare(b.time));
             
             let text = `【急診急救護理紀錄】\n`;
@@ -1022,14 +1177,33 @@
                 text += `(無給藥紀錄)\n`;
             } else {
                 for(let [name, qty] of Object.entries(medSummaryDict)) {
-                    text += `${name}: ${qty} 支\n`;
+                    let unit = name.includes('500ml') ? '瓶' : '支';
+                    let info = medDict[name];
+                    if(info) {
+                        let calcVal = formatDose(info.val * qty);
+                        let calcMl = formatDose(info.ml * qty);
+                        text += `${name}: ${qty} ${unit} (${calcVal}${info.unit})\n`;
+                    } else {
+                        text += `${name}: ${qty} ${unit}\n`;
+                    }
                 }
             }
             
             text += `-----------------\n紀錄護理師: 李阿饅`;
             
             output.value = text;
-            output.scrollTop = output.scrollHeight;
+            showModal('modal-report');
+        }
+
+        function copyReport() {
+            let output = document.getElementById('report-output');
+            output.select();
+            output.setSelectionRange(0, 99999); 
+            navigator.clipboard.writeText(output.value).then(() => {
+                showToast("✅ 已複製到剪貼簿", false);
+            }).catch(() => {
+                alert("複製失敗，請手動全選複製");
+            });
         }
     </script>
 </body>
