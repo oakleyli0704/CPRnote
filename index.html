@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CPR 快速紀錄-V12</title>
+    <title>CPR 快速紀錄-V13</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -59,8 +59,8 @@
         </div>
     </div>
 
-    <!-- 迷你提示框 -->
-    <div id="toast" class="fixed top-32 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-xl text-sm font-bold shadow-2xl z-50 hidden opacity-0 transition-opacity flex-col items-center text-center w-[90%] max-w-sm">
+    <!-- 迷你提示框 (加寬加長，雙行設計) -->
+    <div id="toast" class="fixed top-32 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-4 rounded-xl text-[15px] font-bold shadow-2xl z-50 hidden opacity-0 transition-opacity flex-col items-center text-center w-11/12 max-w-md">
         <div class="flex items-center gap-2 mb-1">
             <i class="fa-solid fa-circle-check text-emerald-400" id="toast-icon"></i>
             <span id="toast-msg" class="leading-relaxed">已紀錄</span>
@@ -110,11 +110,10 @@
                 </div>
             </div>
 
-            <!-- 急救藥物 (A-Z排序與置頂) -->
+            <!-- 急救藥物 -->
             <div class="bg-white rounded-xl shadow-sm p-3 border border-slate-100">
                 <h3 class="font-bold text-slate-500 mb-2 text-xs">急救藥物 (點擊顯示學名與換算)</h3>
                 
-                <!-- Adrenalin 獨立置頂 -->
                 <button onclick="openMedModal('Adrenalin')" class="w-full bg-red-100 text-red-800 border-2 border-red-300 py-4 px-4 rounded-xl font-bold text-lg md:text-xl btn-active flex justify-between items-center mb-3 relative shadow-sm">
                     <div class="flex items-center gap-2">
                         <span>Adrenalin</span>
@@ -123,7 +122,6 @@
                     <span id="epi-timer-badge" class="hidden bg-red-600 text-white text-sm px-2 py-1 rounded-md">03:00</span>
                 </button>
 
-                <!-- 其他急救藥物 A-Z 排序 -->
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="openMedModal('Adenocor')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Adenocor</button>
                     <button onclick="openMedModal('Atropine')" class="bg-white text-slate-800 border border-slate-300 py-4 rounded-lg font-bold text-[15px] md:text-lg btn-active px-1 text-center shadow-sm">Atropine</button>
@@ -168,7 +166,6 @@
                 <div class="flex gap-2 items-end">
                     <div class="w-24">
                         <label class="block text-[10px] text-slate-500 mb-1">單位 (U)</label>
-                        <!-- 全面啟動純數字鍵盤 inputmode="decimal" -->
                         <input type="number" inputmode="decimal" id="val-blood-u" value="2" class="w-full p-3 border border-slate-300 rounded-lg text-base text-center bg-slate-50 font-bold">
                     </div>
                     <button id="btn-submit-blood" onclick="submitBlood()" class="flex-1 bg-red-500 text-white h-[46px] rounded-lg font-bold text-sm md:text-base btn-active shadow-sm transition-colors">紀錄血品</button>
@@ -279,7 +276,7 @@
                 </div>
             </div>
             
-            <!-- 版權宣告 -->
+            <!-- 版權宣告 (頁籤 1 底部) -->
             <div class="text-center text-[10px] text-slate-400 mt-2 pb-6">
                 Copyright &copy; MentoLi 2026<br>此版本非正式紀錄，僅促進急救時紀錄品質
             </div>
@@ -347,7 +344,7 @@
     <!-- ==================== 彈出視窗 (Modals) ==================== -->
     <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex justify-center items-center p-4">
         
-        <!-- 1. 藥物智能快選 Modal (泡製按鈕放大) -->
+        <!-- 1. 藥物智能快選 Modal -->
         <div id="modal-med" class="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl hidden flex-col gap-4">
             
             <div class="text-center border-b pb-2">
@@ -375,7 +372,7 @@
             
             <div id="quick-qty-container" class="flex justify-center gap-2 empty:hidden"></div>
             
-            <!-- 泡製溶液與 Pump Run (升級大按鈕) -->
+            <!-- 泡製大按鈕 -->
             <div id="med-prep-container" class="hidden flex-col gap-4 bg-slate-50 border border-slate-200 p-4 rounded-xl">
                 <div class="flex flex-col gap-2">
                     <label class="text-sm font-bold text-slate-600">泡製溶液</label>
@@ -477,7 +474,7 @@
     </div>
 
     <script>
-        // --- 核心狀態 ---
+        // --- 全域變數 ---
         let isRunning = false;
         let isTotalTimerRunning = false;
         let totalSeconds = 0;
@@ -509,6 +506,23 @@
 
         let cprAlarmInterval = null;
         let epiAlarmInterval = null;
+
+        // --- 全域點擊喚醒 iOS 音效機制 ---
+        document.addEventListener('click', function() {
+            if (audioEnabled) {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+        }, { capture: true, once: false });
+        document.addEventListener('touchstart', function() {
+            if (audioEnabled && audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }, { capture: true, once: false });
+
 
         // --- 藥物智能字典 (去蕪存菁版) ---
         const medDict = {
@@ -555,7 +569,7 @@
             return Number.isInteger(val) ? val : parseFloat(val.toFixed(1));
         }
 
-        // --- 無限循環警報音 ---
+        // --- 無限循環警報音 (精準排程與安全音量) ---
         function startCprAlarm() {
             if(cprAlarmInterval) return;
             if(audioEnabled) playCycleBeep();
@@ -613,7 +627,7 @@
                         cprSeconds--;
                         document.getElementById('cpr-timer').innerText = formatTimeMinSec(cprSeconds);
                     } else if (cprSeconds === 0) {
-                        showToast("⚠️ 2分鐘循環時間到", true);
+                        showToast("⚠️ 2分鐘循環時間到", true, 3000);
                         startCprAlarm();
                         cprSeconds = -1; 
                     }
@@ -624,7 +638,7 @@
                         if (epiSeconds <= 30) badge.classList.add('timer-warning');
                         
                         if (epiSeconds === 0) {
-                            showToast("⚠️ Adrenalin 3分鐘已到！", true);
+                            showToast("⚠️ Adrenalin 3分鐘已到！", true, 3000);
                             startEpiAlarm();
                             badge.classList.remove('timer-warning');
                             badge.classList.add('bg-red-800');
@@ -670,7 +684,7 @@
             if(!isRunning) toggleCPR(); 
         }
 
-        // --- 音效 ---
+        // --- 音效處理 ---
         function toggleSound() {
             audioEnabled = !audioEnabled;
             let icon = document.getElementById('btn-sound');
@@ -686,37 +700,40 @@
                 stopEpiAlarm();
             }
         }
+        
         function playSharpBeep(times) {
             if(!audioCtx || !audioEnabled) return;
-            function beep() {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            
+            let now = audioCtx.currentTime;
+            for (let i = 0; i < times; i++) {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
                 osc.type = 'square'; 
-                osc.frequency.value = 1200; 
-                gain.gain.value = 2.0; 
+                osc.frequency.value = 1000; 
+                gain.gain.value = 0.2; // 安全音量，防 iOS 破音保護
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
-                osc.start();
-                setTimeout(() => osc.stop(), 200); 
+                osc.start(now + (i * 0.3));
+                osc.stop(now + (i * 0.3) + 0.15);
             }
-            beep();
-            if(times > 1) setTimeout(() => playSharpBeep(times - 1), 300);
         }
         function playCycleBeep() {
             if(!audioCtx || !audioEnabled) return;
-            function lowBeep() {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            
+            let now = audioCtx.currentTime;
+            for (let i = 0; i < 2; i++) {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
                 osc.type = 'sine'; 
-                osc.frequency.value = 400; 
-                gain.gain.value = 2.0; 
+                osc.frequency.value = 500; 
+                gain.gain.value = 0.5; 
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
-                osc.start();
-                setTimeout(() => osc.stop(), 400); 
+                osc.start(now + (i * 0.6));
+                osc.stop(now + (i * 0.6) + 0.4);
             }
-            lowBeep();
-            setTimeout(lowBeep, 600); 
         }
 
         // --- 藥物處理 ---
@@ -853,7 +870,7 @@
                 updateMedSummary(activeMedName, activeMedQty);
                 let count = medSummaryDict[activeMedName];
                 
-                stopEpiAlarm(); // 重置警報
+                stopEpiAlarm(); // 停止持續警報並重設
                 epiSeconds = 180; 
                 
                 let countBadge = document.getElementById('epi-badge-count');
@@ -876,7 +893,7 @@
             
             if(conflicts.length > 0) {
                 setTimeout(() => { 
-                    showToast(`⚠️ 注意：與 ${conflicts.join(', ')} 不相容<br><span class="text-xs text-red-200 mt-1 block">請建立另一條 IV Set (分開給藥)</span>`, true, 5000); 
+                    showToast(`⚠️ 注意：與 ${conflicts.join(', ')} 不相容<br><span class="text-[13px] text-red-200 mt-1 block">請建立另一條 IV Set (分開給藥)</span>`, true, 5000); 
                 }, 100);
             } else {
                 showToast(`${type}已紀錄`);
@@ -1013,7 +1030,7 @@
             
             logEvent('循環評估', `[第${cycleCount}循環] 心律: ${selectedCycleRhythm}, ${activePulse}`);
             
-            stopCprAlarm(); // 重置循環警報
+            stopCprAlarm(); // 完成評估即停止循環警報
             cprSeconds = 120;
             cycleCount++;
             document.getElementById('cpr-timer').innerText = "02:00";
